@@ -60,7 +60,7 @@ export class FeedsService {
     });
   }
 
-  async getArticles(userId: string, tag?: string) {
+  async getArticles(userId: string, tag?: string, search?: string, page: number = 1, limit: number = 50) {
     // Buscar todos os sources do usuario (filtrado por tag se fornecida)
     const query = this.subscriptionRepository.createQueryBuilder('subscription')
       .leftJoinAndSelect('subscription.source', 'source')
@@ -73,17 +73,44 @@ export class FeedsService {
     
     const subscriptions = await query.getMany();
     
-    if (!subscriptions.length) return [];
+    if (!subscriptions.length) {
+      return {
+        data: [],
+        total: 0,
+        page,
+        limit,
+        totalPages: 0
+      };
+    }
     
     const sourceIds = subscriptions.map(s => s.source.id);
     
-    // Para simplificar no MVP, buscamos todos os artigos desses sources (via query builder)
-    return this.sourceRepository.manager.createQueryBuilder('article', 'article')
+    const articleQuery = this.sourceRepository.manager.createQueryBuilder('article', 'article')
       .leftJoinAndSelect('article.source', 'source')
-      .where('source.id IN (:...sourceIds)', { sourceIds })
+      .where('source.id IN (:...sourceIds)', { sourceIds });
+
+    if (search) {
+      articleQuery.andWhere(
+        '(LOWER(article.title) LIKE LOWER(:search) OR LOWER(article.description) LIKE LOWER(:search))',
+        { search: `%${search}%` }
+      );
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await articleQuery
       .orderBy('article.publishedAt', 'DESC')
-      .limit(50)
-      .getMany();
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    };
   }
 
   async updateSubscription(userId: string, subscriptionId: string, data: { customName?: string; tags?: string[]; url?: string; selectors?: any }) {

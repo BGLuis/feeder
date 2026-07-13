@@ -19,8 +19,16 @@ export class FeedsController {
   }
 
   @Get('articles')
-  async getArticles(@Request() req: any, @Query('tag') tag?: string) {
-    return this.feedsService.getArticles(req.user.id, tag);
+  async getArticles(
+    @Request() req: any,
+    @Query('tag') tag?: string,
+    @Query('search') search?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string
+  ) {
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 50;
+    return this.feedsService.getArticles(req.user.id, tag, search, pageNum, limitNum);
   }
 
   @Patch(':id')

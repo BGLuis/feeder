@@ -1,0 +1,32 @@
+{
+  "NAV": {
+    "DASHBOARD": "Panel",
+    "DISCOVER": "Descubrir",
+    "SETTINGS": "Ajustes",
+    "LOGIN": "Iniciar sesión",
+    "REGISTER": "Registrarse",
+    "LOGOUT": "Cerrar sesión"
+  },
+  "COMMON": {
+    "SAVE": "Guardar",
+    "CANCEL": "Cancelar",
+    "DELETE": "Eliminar",
+    "EDIT": "Editar",
+    "LOADING": "Cargando...",
+    "LANGUAGE": "Idioma"
+  },
+  "SETTINGS": {
+    "PREFERENCES_TITLE": "Preferencias de la aplicación",
+    "LANGUAGE_DESC": "Elige tu idioma preferido para la interfaz.",
+    "DARK_MODE": "Modo oscuro",
+    "DARK_MODE_DESC": "La aplicación está permanentemente bloqueada en modo oscuro. Porque se ve mejor."
+  },
+  "SETUP": {
+    "WELCOME": "Bienvenido a Feeder",
+    "DESC": "Antes de comenzar, configuremos sus preferencias básicas.",
+    "THEME": "Tema",
+    "DARK": "Oscuro",
+    "LIGHT": "Claro",
+    "FINISH": "Finalizar Configuración"
+  }
+}

@@ -8,17 +8,17 @@ import { CodeEditorComponent, CodeTemplate } from '../ui/code-editor.component';
   standalone: true,
   imports: [ReactiveFormsModule, CodeEditorComponent],
   template: `
-    <section class="bg-[#121212] rounded-[2rem] shadow-sm border border-zinc-800/50 p-8">
-      <div class="flex items-center justify-between mb-6">
-        <h2 class="text-xl font-medium text-zinc-100 flex items-center gap-2">
-          <svg class="w-5 h-5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <section class="bg-white dark:bg-[#121212] rounded-[2rem] shadow-sm border border-zinc-200 dark:border-zinc-800/50 p-8">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+        <h2 class="text-xl font-medium text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+          <svg class="w-5 h-5 text-zinc-600 dark:text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
           Webhooks Configuration
         </h2>
         
         @if (!showForm()) {
-          <button (click)="openForm()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-sm font-medium transition-colors">
+          <button (click)="openForm()" class="w-full sm:w-auto px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-zinc-900 dark:text-white rounded-full text-sm font-medium transition-colors">
             Add Webhook
           </button>
         }
@@ -32,14 +32,14 @@ import { CodeEditorComponent, CodeTemplate } from '../ui/code-editor.component';
         <!-- Webhooks List -->
         @if (!showForm()) {
           @for (webhook of webhooksService.webhooks(); track webhook.id) {
-            <div class="flex flex-col p-4 bg-[#0a0a0a] border border-zinc-800/50 rounded-2xl gap-3">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-zinc-200 font-medium text-sm">{{ webhook.url }}</p>
-                  <p class="text-zinc-500 text-xs mt-1">Trigger: {{ webhook.triggerType }} {{ webhook.triggerValue ? '(' + webhook.triggerValue + ')' : '' }}</p>
+            <div class="flex flex-col p-4 bg-zinc-50 dark:bg-[#0a0a0a] border border-zinc-200 dark:border-zinc-800/50 rounded-2xl gap-3">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="overflow-hidden">
+                  <p class="text-zinc-800 dark:text-zinc-200 font-medium text-sm truncate">{{ webhook.url }}</p>
+                  <p class="text-zinc-500 text-xs mt-1 truncate">Trigger: {{ webhook.triggerType }} {{ webhook.triggerValue ? '(' + webhook.triggerValue + ')' : '' }}</p>
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="px-2 py-1 rounded text-xs" [class.bg-emerald-500]="webhook.isActive" [class.text-white]="webhook.isActive" [class.bg-zinc-800]="!webhook.isActive" [class.text-zinc-400]="!webhook.isActive">
+                  <span class="px-2 py-1 rounded text-xs" [class.bg-emerald-500]="webhook.isActive" [class.text-zinc-900 dark:text-white]="webhook.isActive" [class.bg-zinc-200 dark:bg-zinc-800]="!webhook.isActive" [class.text-zinc-600 dark:text-zinc-400]="!webhook.isActive">
                     {{ webhook.isActive ? 'Active' : 'Inactive' }}
                   </span>
                   <button (click)="deleteWebhook(webhook.id)" class="p-2 text-red-400 hover:bg-red-950/30 rounded-full transition-colors" title="Delete">
@@ -55,16 +55,16 @@ import { CodeEditorComponent, CodeTemplate } from '../ui/code-editor.component';
 
         <!-- Add Webhook Form -->
         @if (showForm()) {
-          <form [formGroup]="webhookForm" (ngSubmit)="saveWebhook()" class="flex flex-col gap-6 p-6 bg-[#0a0a0a] border border-zinc-800/50 rounded-2xl">
+          <form [formGroup]="webhookForm" (ngSubmit)="saveWebhook()" class="flex flex-col gap-6 p-6 bg-zinc-50 dark:bg-[#0a0a0a] border border-zinc-200 dark:border-zinc-800/50 rounded-2xl">
             <div>
-              <label class="block text-sm font-medium text-zinc-400 mb-2">Target URL</label>
-              <input type="url" formControlName="url" placeholder="https://api.example.com/webhook" class="w-full px-4 py-3 bg-[#121212] border border-zinc-800/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all text-sm text-zinc-200" />
+              <label class="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-2">Target URL</label>
+              <input type="url" formControlName="url" placeholder="https://api.example.com/webhook" class="w-full px-4 py-3 bg-white dark:bg-[#121212] border border-zinc-200 dark:border-zinc-800/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all text-sm text-zinc-800 dark:text-zinc-200" />
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-zinc-400 mb-2">Trigger Event</label>
-                <select formControlName="triggerType" class="w-full px-4 py-3 bg-[#121212] border border-zinc-800/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all text-sm text-zinc-200">
+                <label class="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-2">Trigger Event</label>
+                <select formControlName="triggerType" class="w-full px-4 py-3 bg-white dark:bg-[#121212] border border-zinc-200 dark:border-zinc-800/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all text-sm text-zinc-800 dark:text-zinc-200">
                   <option value="ALL">All Feeds (Any new article)</option>
                   <option value="TAG">Specific Tag</option>
                   <option value="SOURCE">Specific Source/Feed</option>
@@ -73,19 +73,19 @@ import { CodeEditorComponent, CodeTemplate } from '../ui/code-editor.component';
 
               @if (webhookForm.get('triggerType')?.value !== 'ALL') {
                 <div>
-                  <label class="block text-sm font-medium text-zinc-400 mb-2">Trigger Value</label>
-                  <input type="text" formControlName="triggerValue" placeholder="e.g., 'tech' or source ID" class="w-full px-4 py-3 bg-[#121212] border border-zinc-800/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all text-sm text-zinc-200" />
+                  <label class="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-2">Trigger Value</label>
+                  <input type="text" formControlName="triggerValue" placeholder="e.g., 'tech' or source ID" class="w-full px-4 py-3 bg-white dark:bg-[#121212] border border-zinc-200 dark:border-zinc-800/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all text-sm text-zinc-800 dark:text-zinc-200" />
                 </div>
               }
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-zinc-400 mb-2">Secret (Optional, for HMAC-SHA256 signature)</label>
-              <input type="text" formControlName="secret" placeholder="Leave blank to auto-generate" class="w-full px-4 py-3 bg-[#121212] border border-zinc-800/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all text-sm text-zinc-200" />
+              <label class="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-2">Secret (Optional, for HMAC-SHA256 signature)</label>
+              <input type="text" formControlName="secret" placeholder="Leave blank to auto-generate" class="w-full px-4 py-3 bg-white dark:bg-[#121212] border border-zinc-200 dark:border-zinc-800/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all text-sm text-zinc-800 dark:text-zinc-200" />
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-zinc-400 mb-2">Payload Template (JSON)</label>
+              <label class="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-2">Payload Template (JSON)</label>
               <p ngNonBindable class="text-xs text-zinc-500 mb-3">Available variables: <code>{{item.title}}</code>, <code>{{item.url}}</code>, <code>{{item.content}}</code>, <code>{{item.imageUrl}}</code>, <code>{{feed.name}}</code></p>
               
               <app-code-editor
@@ -99,10 +99,10 @@ import { CodeEditorComponent, CodeTemplate } from '../ui/code-editor.component';
             </div>
 
             <div class="flex items-center justify-end gap-3 mt-2">
-              <button type="button" (click)="closeForm()" class="px-5 py-2.5 text-zinc-400 hover:text-zinc-200 text-sm font-medium transition-colors">
+              <button type="button" (click)="closeForm()" class="px-5 py-2.5 text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:text-zinc-200 text-sm font-medium transition-colors">
                 Cancel
               </button>
-              <button type="submit" [disabled]="webhookForm.invalid || loading()" class="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+              <button type="submit" [disabled]="webhookForm.invalid || loading()" class="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-zinc-900 dark:text-white rounded-full text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
                 @if (loading()) {
                   <span class="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                 }

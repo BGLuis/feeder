@@ -1,0 +1,32 @@
+{
+  "NAV": {
+    "DASHBOARD": "Dashboard",
+    "DISCOVER": "Discover",
+    "SETTINGS": "Settings",
+    "LOGIN": "Login",
+    "REGISTER": "Register",
+    "LOGOUT": "Logout"
+  },
+  "COMMON": {
+    "SAVE": "Save",
+    "CANCEL": "Cancel",
+    "DELETE": "Delete",
+    "EDIT": "Edit",
+    "LOADING": "Loading...",
+    "LANGUAGE": "Language"
+  },
+  "SETTINGS": {
+    "PREFERENCES_TITLE": "App Preferences",
+    "LANGUAGE_DESC": "Choose your preferred language for the interface.",
+    "DARK_MODE": "Dark Mode",
+    "DARK_MODE_DESC": "The app is permanently locked to dark mode. Because it looks better."
+  },
+  "SETUP": {
+    "WELCOME": "Welcome to Feeder",
+    "DESC": "Before we start, let's configure your basic preferences.",
+    "THEME": "Theme",
+    "DARK": "Dark",
+    "LIGHT": "Light",
+    "FINISH": "Finish Setup"
+  }
+}

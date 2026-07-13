@@ -4,6 +4,11 @@ import { Subscription } from '../../feeds/entities/subscription.entity';
 import { UserArticleState } from '../../feeds/entities/user-article-state.entity';
 import { Webhook } from '../../webhooks/entities/webhook.entity';
 
+export enum UserRole {
+  ADMIN = 'admin',
+  USER = 'user',
+}
+
 @Entity()
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -18,8 +23,8 @@ export class User {
   @Column({ nullable: true })
   password?: string;
 
-  @Column({ default: 'user' })
-  role: string;
+  @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
+  role: UserRole;
 
   @CreateDateColumn()
   createdAt: Date;

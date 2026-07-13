@@ -12,26 +12,26 @@ import { FormsModule } from '@angular/forms';
   template: `
     <app-auth-layout>
       <div class="w-full max-w-md mx-auto">
-        <div class="bg-[#121212] rounded-[2rem] shadow-sm border border-zinc-800/50 p-8 md:p-10 relative overflow-hidden">
+        <div class="bg-white dark:bg-[#121212] rounded-[2rem] shadow-sm border border-zinc-200 dark:border-zinc-800/50 p-8 md:p-10 relative overflow-hidden">
           <div class="absolute inset-0 bg-gradient-to-br from-zinc-800/10 to-transparent opacity-50"></div>
           
           <div class="relative z-10">
             <div class="text-center mb-10">
-              <h1 class="text-4xl font-light text-zinc-50 tracking-tight">Feeder</h1>
-              <p class="text-zinc-400 mt-3 text-sm">Welcome back. Enter your details.</p>
+              <h1 class="text-4xl font-light text-zinc-900 dark:text-zinc-50 tracking-tight">Feeder</h1>
+              <p class="text-zinc-600 dark:text-zinc-400 mt-3 text-sm">Welcome back. Enter your details.</p>
             </div>
 
             <div class="space-y-6">
               <div class="space-y-2 text-left">
-                <label class="text-sm font-medium text-zinc-200 block">Email</label>
+                <label class="text-sm font-medium text-zinc-800 dark:text-zinc-200 block">Email</label>
                 <input type="email" placeholder="nome@exemplo.com" [(ngModel)]="email"
-                  class="w-full px-4 py-3.5 bg-[#0a0a0a] border border-zinc-800/50 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/50 transition-all text-zinc-100 placeholder:text-zinc-600" />
+                  class="w-full px-4 py-3.5 bg-zinc-50 dark:bg-[#0a0a0a] border border-zinc-200 dark:border-zinc-800/50 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/50 transition-all text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-600" />
               </div>
               
               <div class="space-y-2 text-left">
-                <label class="text-sm font-medium text-zinc-200 block">Password</label>
+                <label class="text-sm font-medium text-zinc-800 dark:text-zinc-200 block">Password</label>
                 <input type="password" placeholder="••••••••" [(ngModel)]="password"
-                  class="w-full px-4 py-3.5 bg-[#0a0a0a] border border-zinc-800/50 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/50 transition-all text-zinc-100 placeholder:text-zinc-600" />
+                  class="w-full px-4 py-3.5 bg-zinc-50 dark:bg-[#0a0a0a] border border-zinc-200 dark:border-zinc-800/50 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/50 transition-all text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-600" />
               </div>
 
               @if (errorMessage()) {
@@ -56,21 +56,21 @@ import { FormsModule } from '@angular/forms';
             </div>
 
             <div class="my-8 flex items-center gap-4">
-              <div class="h-px bg-zinc-800/50 flex-1"></div>
+              <div class="h-px bg-zinc-200/50 dark:bg-zinc-800/50 flex-1"></div>
               <span class="text-xs text-zinc-600 font-medium uppercase tracking-widest">Or continue with</span>
-              <div class="h-px bg-zinc-800/50 flex-1"></div>
+              <div class="h-px bg-zinc-200/50 dark:bg-zinc-800/50 flex-1"></div>
             </div>
 
             <button (click)="onLoginWithPasskey()"
               [disabled]="loading()"
-              class="w-full bg-[#0a0a0a] border border-zinc-800/50 hover:bg-zinc-800/30 text-zinc-300 px-8 py-3.5 rounded-full font-medium transition-all focus:outline-none focus:ring-4 focus:ring-emerald-500/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-sm group">
+              class="w-full bg-zinc-50 dark:bg-[#0a0a0a] border border-zinc-200 dark:border-zinc-800/50 hover:bg-zinc-800/30 text-zinc-700 dark:text-zinc-300 px-8 py-3.5 rounded-full font-medium transition-all focus:outline-none focus:ring-4 focus:ring-emerald-500/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-sm group">
               <svg lucideFingerprint class="w-5 h-5 text-zinc-500 group-hover:text-emerald-500 transition-colors"></svg>
               Passkey
             </button>
 
             <p class="text-center text-sm text-zinc-500 mt-8">
               Don't have an account? 
-              <a routerLink="/register" class="text-zinc-300 hover:text-white font-medium transition-colors">Sign up</a>
+              <a routerLink="/register" class="text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:text-white font-medium transition-colors">Sign up</a>
             </p>
           </div>
         </div>

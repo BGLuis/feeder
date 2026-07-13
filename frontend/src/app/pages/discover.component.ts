@@ -13,45 +13,45 @@ import { CodeEditorComponent, CodeTemplate } from '../ui/code-editor.component';
     <app-main-layout>
       <div class="max-w-3xl mx-auto py-8">
         <header class="mb-10">
-          <h1 class="text-4xl tracking-tight font-medium text-zinc-50 mb-3">Add new feed</h1>
-          <p class="text-zinc-400 text-lg leading-relaxed max-w-[65ch]">Subscribe to a new RSS feed or Webhook. All data is processed privately.</p>
+          <h1 class="text-4xl tracking-tight font-medium text-zinc-900 dark:text-zinc-50 mb-3">Add new feed</h1>
+          <p class="text-zinc-600 dark:text-zinc-400 text-lg leading-relaxed max-w-[65ch]">Subscribe to a new RSS feed or Webhook. All data is processed privately.</p>
         </header>
 
-        <div class="bg-[#121212] rounded-[2rem] shadow-sm border border-zinc-800/50 p-8 md:p-10">
+        <div class="bg-white dark:bg-[#121212] rounded-[2rem] shadow-sm border border-zinc-200 dark:border-zinc-800/50 p-8 md:p-10">
           <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-8">
             
             <div class="flex flex-col gap-3">
-              <label class="text-sm font-medium text-zinc-200" for="url">Feed URL</label>
+              <label class="text-sm font-medium text-zinc-800 dark:text-zinc-200" for="url">Feed URL</label>
               <input 
                 id="url"
                 type="url" 
                 formControlName="url" 
                 placeholder="https://example.com/feed.xml"
-                class="px-4 py-3.5 bg-[#0a0a0a] border border-zinc-800/50 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/50 transition-all text-zinc-100 placeholder:text-zinc-600"
+                class="px-4 py-3.5 bg-zinc-50 dark:bg-[#0a0a0a] border border-zinc-200 dark:border-zinc-800/50 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/50 transition-all text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-600"
               />
             </div>
 
             <div class="flex flex-col gap-3">
-              <label class="text-sm font-medium text-zinc-200" for="name">Feed Name <span class="text-zinc-500 font-normal ml-1">(Optional)</span></label>
+              <label class="text-sm font-medium text-zinc-800 dark:text-zinc-200" for="name">Feed Name <span class="text-zinc-500 font-normal ml-1">(Optional)</span></label>
               <input 
                 id="name"
                 type="text" 
                 formControlName="name" 
                 placeholder="My Tech Blog"
-                class="px-4 py-3.5 bg-[#0a0a0a] border border-zinc-800/50 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/50 transition-all text-zinc-100 placeholder:text-zinc-600"
+                class="px-4 py-3.5 bg-zinc-50 dark:bg-[#0a0a0a] border border-zinc-200 dark:border-zinc-800/50 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/50 transition-all text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-600"
               />
             </div>
 
             <div class="flex flex-col gap-3">
-              <label class="text-sm font-medium text-zinc-200">Tags <span class="text-zinc-500 font-normal ml-1">(Press Enter or Comma)</span></label>
-              <div class="flex flex-wrap items-center gap-2 p-2 bg-[#0a0a0a] border border-zinc-800/50 rounded-2xl focus-within:ring-4 focus-within:ring-emerald-500/10 focus-within:border-emerald-500/50 transition-all min-h-[56px] text-zinc-100">
+              <label class="text-sm font-medium text-zinc-800 dark:text-zinc-200">Tags <span class="text-zinc-500 font-normal ml-1">(Press Enter or Comma)</span></label>
+              <div class="flex flex-wrap items-center gap-2 p-2 bg-zinc-50 dark:bg-[#0a0a0a] border border-zinc-200 dark:border-zinc-800/50 rounded-2xl focus-within:ring-4 focus-within:ring-emerald-500/10 focus-within:border-emerald-500/50 transition-all min-h-[56px] text-zinc-900 dark:text-zinc-100">
                 @for (tag of currentTags(); track tag) {
-                  <span class="inline-flex items-center gap-1 px-3 py-1 bg-zinc-800 text-zinc-300 rounded-full text-sm font-medium">
+                  <span class="inline-flex items-center gap-1 px-3 py-1 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-full text-sm font-medium">
                     <svg class="w-3.5 h-3.5 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                     </svg>
                     {{ tag }}
-                    <button type="button" (click)="removeTag(tag)" class="text-zinc-500 hover:text-white transition-colors ml-1 p-0.5 focus:outline-none">
+                    <button type="button" (click)="removeTag(tag)" class="text-zinc-500 hover:text-zinc-900 dark:text-white transition-colors ml-1 p-0.5 focus:outline-none">
                       <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                       </svg>
@@ -65,24 +65,24 @@ import { CodeEditorComponent, CodeTemplate } from '../ui/code-editor.component';
                   (keydown.comma)="$event.preventDefault(); addTag(tagInput.value); tagInput.value = ''"
                   (blur)="addTag(tagInput.value); tagInput.value = ''"
                   placeholder="tech, youtube, news..."
-                  class="flex-1 min-w-[140px] bg-transparent border-none focus:outline-none focus:ring-0 text-zinc-100 placeholder:text-zinc-600 px-2 py-1.5"
+                  class="flex-1 min-w-[140px] bg-transparent border-none focus:outline-none focus:ring-0 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-600 px-2 py-1.5"
                 />
               </div>
             </div>
 
-            <div class="flex items-center justify-between py-6 border-y border-zinc-800/50">
+            <div class="flex items-center justify-between py-6 border-y border-zinc-200 dark:border-zinc-800/50">
               <div class="flex flex-col gap-1">
-                <label class="text-base font-medium text-zinc-200" for="isPrivate">Private Feed</label>
+                <label class="text-base font-medium text-zinc-800 dark:text-zinc-200" for="isPrivate">Private Feed</label>
                 <span class="text-sm text-zinc-500">Requires authentication or contains sensitive data</span>
               </div>
               <label class="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" formControlName="isPrivate" id="isPrivate" class="sr-only peer">
-                <div class="w-11 h-6 bg-zinc-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 border border-zinc-700 peer-checked:border-emerald-500"></div>
+                <div class="w-11 h-6 bg-zinc-200 dark:bg-zinc-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 border border-zinc-300 dark:border-zinc-700 peer-checked:border-emerald-500"></div>
               </label>
             </div>
 
             <div class="flex flex-col gap-3">
-              <label class="text-sm font-medium text-zinc-200" for="selectors">Advanced Selectors <span class="text-zinc-500 font-normal ml-1">(JSON)</span></label>
+              <label class="text-sm font-medium text-zinc-800 dark:text-zinc-200" for="selectors">Advanced Selectors <span class="text-zinc-500 font-normal ml-1">(JSON)</span></label>
               <app-code-editor
                 title="Seletores HTML"
                 language="json"

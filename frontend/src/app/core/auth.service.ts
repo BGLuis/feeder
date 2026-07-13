@@ -8,10 +8,15 @@ export interface AuthResponse {
   access_token: string;
 }
 
+export enum UserRole {
+  ADMIN = 'admin',
+  USER = 'user',
+}
+
 export interface UserPayload {
   email: string;
   sub: string;
-  role?: string;
+  role?: UserRole;
   name?: string;
 }
 
@@ -27,7 +32,7 @@ export class AuthService {
   }
 
   isAdmin(): boolean {
-    return this.currentUser()?.role === 'admin';
+    return this.currentUser()?.role === UserRole.ADMIN;
   }
 
   private loadUserFromToken() {

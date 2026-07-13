@@ -33,9 +33,14 @@ export class FeedsService {
     return firstValueFrom(this.http.get<FeedSubscription[]>(this.apiUrl));
   }
 
-  getArticles(tag?: string) {
-    const params = tag ? `?tag=${tag}` : '';
-    return firstValueFrom(this.http.get<any[]>(`${this.apiUrl}/articles${params}`));
+  getArticles(tag?: string, search?: string, page: number = 1, limit: number = 50) {
+    const params = new URLSearchParams();
+    if (tag) params.set('tag', tag);
+    if (search) params.set('search', search);
+    params.set('page', page.toString());
+    params.set('limit', limit.toString());
+    
+    return firstValueFrom(this.http.get<{ data: any[], total: number, page: number, limit: number, totalPages: number }>(`${this.apiUrl}/articles?${params.toString()}`));
   }
 
   subscribe(payload: FeedSubscriptionPayload) {

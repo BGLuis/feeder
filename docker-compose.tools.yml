@@ -1,0 +1,27 @@
+services:
+  phpmyadmin:
+    image: phpmyadmin:5.2
+    container_name: feeder-phpmyadmin
+    ports:
+      - "${PHPMYADMIN_PORT:-8080}:80"
+    environment:
+      PMA_USER: ${DB_USER:-feederuser}
+      PMA_PASSWORD: ${DB_PASSWORD:-feederpassword}
+      PMA_HOSTS: mysql
+    networks:
+      - feeder_network
+
+  redis-commander:
+    image: ghcr.io/joeferner/redis-commander:0.8.1
+    container_name: feeder-redis-commander
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "${REDISCOMMANDER_PORT:-8081}:8081"
+    networks:
+      - feeder_network
+
+networks:
+  feeder_network:
+    external: true
+    name: feeder_feeder_network

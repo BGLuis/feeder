@@ -20,7 +20,7 @@ export class ButtonComponent {
   computedClasses = computed(() => {
     const base = 'inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm';
     const variant = this.variant();
-    const primary = 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md focus:ring-blue-500';
+    const primary = 'bg-blue-600 text-zinc-900 dark:text-white hover:bg-blue-700 hover:shadow-md focus:ring-blue-500';
     const secondary = 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:ring-gray-500';
     return `${base} ${variant === 'primary' ? primary : secondary} ${this.customClass()}`;
   });

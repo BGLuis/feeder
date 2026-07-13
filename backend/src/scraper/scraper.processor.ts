@@ -55,12 +55,22 @@ export class ScraperProcessor extends WorkerHost {
             article.title = item.title || 'Untitled';
             article.url = item.link;
             
-            const rawContent = (item as any)['content:encoded'] || item.content || '';
-            article.content = item.contentSnippet || rawContent.replace(/<[^>]+>/g, '').substring(0, 300);
+            const anyItem = item as any;
+
+            let ytDescription = '';
+            if (anyItem.mediaGroup && anyItem.mediaGroup['media:description'] && anyItem.mediaGroup['media:description'][0]) {
+              ytDescription = typeof anyItem.mediaGroup['media:description'][0] === 'string' ? anyItem.mediaGroup['media:description'][0] : anyItem.mediaGroup['media:description'][0]._;
+            }
+            if (!ytDescription && anyItem.mediaGroup && anyItem.mediaGroup['media:description']) {
+                ytDescription = anyItem.mediaGroup['media:description'];
+            }
+
+            const rawContent = (item as any)['content:encoded'] || item.content || ytDescription || '';
+            const strippedContent = rawContent.replace(/<[^>]+>/g, '').trim();
+            article.content = item.contentSnippet || strippedContent.substring(0, 300);
             
             // Extract Image URL
             let imageUrl = null;
-            const anyItem = item as any;
             
             if (anyItem.enclosure && anyItem.enclosure.url && anyItem.enclosure.type && anyItem.enclosure.type.startsWith('image/')) {
               imageUrl = anyItem.enclosure.url;
