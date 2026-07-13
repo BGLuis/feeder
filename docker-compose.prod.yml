@@ -1,0 +1,111 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: feeder-mysql-prod
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_NAME:-feeder}
+      MYSQL_USER: ${DB_USER:-feederuser}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-feederpassword}
+    ports:
+      - '3306:3306'
+    volumes:
+      - mysql_data_prod:/var/lib/mysql
+    networks:
+      - feeder_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u$$MYSQL_USER", "-p$$MYSQL_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
+
+  redis:
+    image: redis:7-alpine
+    container_name: feeder-redis-prod
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data_prod:/data
+    networks:
+      - feeder_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: feeder-backend-prod
+    ports:
+      - '3000:3000'
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=${DB_USER:-feederuser}
+      - DB_PASSWORD=${DB_PASSWORD:-feederpassword}
+      - DB_NAME=${DB_NAME:-feeder}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=${JWT_SECRET:-sua_chave_secreta_super_segura}
+      - JWT_EXPIRATION=${JWT_EXPIRATION:-1d}
+      - RP_NAME=${RP_NAME:-Feeder App}
+      - RP_ID=${RP_ID:-localhost}
+      - ORIGIN=${ORIGIN:-http://localhost}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - feeder_network
+    restart: unless-stopped
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    container_name: feeder-frontend-prod
+    ports:
+      - '80:80'
+    depends_on:
+      backend:
+        condition: service_started
+    networks:
+      - feeder_network
+    restart: unless-stopped
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
+
+networks:
+  feeder_network:
+    driver: bridge
+
+volumes:
+  mysql_data_prod:
+  redis_data_prod:
