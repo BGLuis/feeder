@@ -27,6 +27,21 @@ export class Source {
   @Column('json', { nullable: true })
   selectors: any;
 
+  @Column({ nullable: true })
+  userScheduleHint: string;
+
+  @Column({ nullable: true })
+  cronSchedule: string;
+
+  @Column({ type: 'datetime', nullable: true })
+  nextFetchAt: Date;
+
+  @Column({ type: 'datetime', nullable: true })
+  lastFetchAt: Date;
+
+  @Column({ default: 0 })
+  consecutiveMisses: number;
+
   @OneToMany(() => Subscription, subscription => subscription.source)
   subscriptions: Relation<Subscription>[];
 

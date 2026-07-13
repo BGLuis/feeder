@@ -43,6 +43,8 @@ export class ScraperProcessor extends WorkerHost {
       return;
     }
 
+    let foundNewPosts = false;
+
     try {
       if (source.type === SourceType.RSS) {
         // Fetch and parse RSS
@@ -100,6 +102,7 @@ export class ScraperProcessor extends WorkerHost {
             article.publishedAt = item.pubDate ? new Date(item.pubDate) : new Date();
             article.source = source;
             await this.articleRepository.save(article);
+            foundNewPosts = true;
             await this.triggerWebhooks(article, source);
 
           }
@@ -162,6 +165,7 @@ export class ScraperProcessor extends WorkerHost {
                   article.source = source;
                   try {
             await this.articleRepository.save(article);
+            foundNewPosts = true;
             await this.triggerWebhooks(article, source);
 
 
@@ -228,6 +232,7 @@ export class ScraperProcessor extends WorkerHost {
                 article.publishedAt = new Date(Date.now() - i * 1000);
                 article.source = source;
             await this.articleRepository.save(article);
+            foundNewPosts = true;
             await this.triggerWebhooks(article, source);
 
 
@@ -279,6 +284,7 @@ export class ScraperProcessor extends WorkerHost {
               article.publishedAt = new Date();
               article.source = source;
             await this.articleRepository.save(article);
+            foundNewPosts = true;
             await this.triggerWebhooks(article, source);
 
 
@@ -290,6 +296,8 @@ export class ScraperProcessor extends WorkerHost {
           await browser.close();
         }
       }
+
+      await this.calculateNextFetch(source, foundNewPosts);
     } catch (error) {
       this.logger.error(`Error scraping ${job.data.url}`, error);
       throw error;
@@ -361,5 +369,52 @@ export class ScraperProcessor extends WorkerHost {
         });
       }
     }
+  }
+
+  private async calculateNextFetch(source: Source, foundNewPosts: boolean) {
+    source.lastFetchAt = new Date();
+
+    if (foundNewPosts) {
+      source.consecutiveMisses = 0;
+    } else {
+      source.consecutiveMisses = (source.consecutiveMisses || 0) + 1;
+    }
+
+    const lastArticles = await this.articleRepository.find({
+      where: { source: { id: source.id } },
+      order: { publishedAt: 'DESC' },
+      take: 10
+    });
+
+    const now = new Date();
+    let nextFetch = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+    if (lastArticles.length >= 2) {
+      let totalDiff = 0;
+      for (let i = 0; i < lastArticles.length - 1; i++) {
+        totalDiff += Math.abs(lastArticles[i].publishedAt.getTime() - lastArticles[i+1].publishedAt.getTime());
+      }
+      let avgDiffMs = totalDiff / (lastArticles.length - 1);
+      
+      if (avgDiffMs < 60 * 60 * 1000) avgDiffMs = 60 * 60 * 1000;
+      
+      const backoffMultiplier = Math.pow(1.5, source.consecutiveMisses);
+      let delayedDiffMs = avgDiffMs * backoffMultiplier;
+
+      const MAX_DELAY_MS = 14 * 24 * 60 * 60 * 1000;
+      if (delayedDiffMs > MAX_DELAY_MS) delayedDiffMs = MAX_DELAY_MS;
+
+      nextFetch = new Date(now.getTime() + delayedDiffMs);
+    } else {
+      const baseDelayMs = 24 * 60 * 60 * 1000;
+      let delayedDiffMs = baseDelayMs * Math.pow(1.5, source.consecutiveMisses);
+      const MAX_DELAY_MS = 14 * 24 * 60 * 60 * 1000;
+      if (delayedDiffMs > MAX_DELAY_MS) delayedDiffMs = MAX_DELAY_MS;
+      nextFetch = new Date(now.getTime() + delayedDiffMs);
+    }
+
+    source.nextFetchAt = nextFetch;
+    await this.sourceRepository.save(source);
+    this.logger.log(`Source ${source.id} next fetch scheduled at ${nextFetch.toISOString()} (misses: ${source.consecutiveMisses})`);
   }
 }

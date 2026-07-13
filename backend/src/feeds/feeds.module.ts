@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bullmq';
 import { FeedsController } from './feeds.controller';
 import { FeedsService } from './feeds.service';
+import { FeedsScheduler } from './feeds.scheduler';
 import { Source } from './entities/source.entity';
 import { Subscription } from './entities/subscription.entity';
 import { Article } from './entities/article.entity';
@@ -18,6 +19,6 @@ import { AuthModule } from '../auth/auth.module';
     AuthModule
   ],
   controllers: [FeedsController],
-  providers: [FeedsService]
+  providers: [FeedsService, FeedsScheduler]
 })
 export class FeedsModule {}
