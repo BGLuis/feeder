@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, Relation } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  Relation,
+} from 'typeorm';
 import { Subscription } from './subscription.entity';
 import { Article } from './article.entity';
 
@@ -42,9 +48,9 @@ export class Source {
   @Column({ default: 0 })
   consecutiveMisses: number;
 
-  @OneToMany(() => Subscription, subscription => subscription.source)
+  @OneToMany(() => Subscription, (subscription) => subscription.source)
   subscriptions: Relation<Subscription>[];
 
-  @OneToMany(() => Article, article => article.source)
+  @OneToMany(() => Article, (article) => article.source)
   articles: Relation<Article>[];
 }

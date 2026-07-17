@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, Relation } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  type Relation,
+} from 'typeorm';
 import { User } from '../../auth/entities/user.entity';
 import { Article } from './article.entity';
 
@@ -7,10 +13,12 @@ export class UserArticleState {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => User, user => user.articleStates, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.articleStates, { onDelete: 'CASCADE' })
   user: Relation<User>;
 
-  @ManyToOne(() => Article, article => article.userStates, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Article, (article) => article.userStates, {
+    onDelete: 'CASCADE',
+  })
   article: Relation<Article>;
 
   @Column({ default: false })

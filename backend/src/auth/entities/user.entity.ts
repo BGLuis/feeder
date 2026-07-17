@@ -1,4 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, Relation } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+  Relation,
+} from 'typeorm';
 import { UserCredential } from './user-credential.entity';
 import { Subscription } from '../../feeds/entities/subscription.entity';
 import { UserArticleState } from '../../feeds/entities/user-article-state.entity';
@@ -32,15 +40,15 @@ export class User {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @OneToMany(() => UserCredential, credential => credential.user)
+  @OneToMany(() => UserCredential, (credential) => credential.user)
   credentials: Relation<UserCredential>[];
 
-  @OneToMany(() => Subscription, subscription => subscription.user)
+  @OneToMany(() => Subscription, (subscription) => subscription.user)
   subscriptions: Relation<Subscription>[];
 
-  @OneToMany(() => UserArticleState, state => state.user)
+  @OneToMany(() => UserArticleState, (state) => state.user)
   articleStates: Relation<UserArticleState>[];
 
-  @OneToMany(() => Webhook, webhook => webhook.user)
+  @OneToMany(() => Webhook, (webhook) => webhook.user)
   webhooks: Relation<Webhook>[];
 }

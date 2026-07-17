@@ -7,13 +7,15 @@ import * as crypto from 'crypto';
 export class WebhooksProcessor extends WorkerHost {
   private readonly logger = new Logger(WebhooksProcessor.name);
 
-  async process(job: Job<{ targetUrl: string; secret: string; payload: any }, any, string>): Promise<any> {
+  async process(
+    job: Job<{ targetUrl: string; secret: string; payload: any }, any, string>,
+  ): Promise<any> {
     const { targetUrl, secret, payload } = job.data;
-    
+
     this.logger.log(`Dispatching webhook to ${targetUrl}`);
 
     const payloadString = JSON.stringify(payload);
-    
+
     const signature = crypto
       .createHmac('sha256', secret)
       .update(payloadString)
@@ -30,7 +32,9 @@ export class WebhooksProcessor extends WorkerHost {
       });
 
       if (!response.ok) {
-        this.logger.warn(`Webhook to ${targetUrl} responded with status: ${response.status}`);
+        this.logger.warn(
+          `Webhook to ${targetUrl} responded with status: ${response.status}`,
+        );
       } else {
         this.logger.log(`Webhook to ${targetUrl} successfully delivered.`);
       }
@@ -38,7 +42,7 @@ export class WebhooksProcessor extends WorkerHost {
       return { status: response.status };
     } catch (error) {
       this.logger.error(`Failed to dispatch webhook to ${targetUrl}`, error);
-      throw error; 
+      throw error;
     }
   }
 }

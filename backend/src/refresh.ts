@@ -16,7 +16,7 @@ async function run() {
     console.log('Queuing', source.url);
     await scraperQueue.add('fetch', { url: source.url, sourceId: source.id });
   }
-  
+
   await app.close();
 }
 run();

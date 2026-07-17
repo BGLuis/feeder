@@ -16,9 +16,9 @@ import { AuthModule } from '../auth/auth.module';
     BullModule.registerQueue({
       name: 'scraper',
     }),
-    AuthModule
+    AuthModule,
   ],
   controllers: [FeedsController],
-  providers: [FeedsService, FeedsScheduler]
+  providers: [FeedsService, FeedsScheduler],
 })
 export class FeedsModule {}

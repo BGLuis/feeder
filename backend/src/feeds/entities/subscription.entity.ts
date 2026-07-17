@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, Relation } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  type Relation,
+} from 'typeorm';
 import { User } from '../../auth/entities/user.entity';
 import { Source } from './source.entity';
 
@@ -7,10 +13,12 @@ export class Subscription {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => User, user => user.subscriptions, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.subscriptions, { onDelete: 'CASCADE' })
   user: Relation<User>;
 
-  @ManyToOne(() => Source, source => source.subscriptions, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Source, (source) => source.subscriptions, {
+    onDelete: 'CASCADE',
+  })
   source: Relation<Source>;
 
   @Column('simple-array', { nullable: true })

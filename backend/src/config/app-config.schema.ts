@@ -1,0 +1,180 @@
+import * as Joi from 'joi';
+
+export const validationSchema = Joi.object({
+  NODE_ENV: Joi.string()
+    .valid('development', 'production', 'test')
+    .default('development')
+    .description('The Node.js environment'),
+  PORT: Joi.number()
+    .min(0)
+    .max(65535)
+    .default(3000)
+    .description('The port on which the application will run'),
+  DB_TYPE: Joi.string().required(),
+  DB_NAME: Joi.string().required(),
+  DB_HOST: Joi.string().optional(),
+  DB_MASTER_HOST: Joi.string().optional(),
+  DB_SLAVE_HOSTS: Joi.string().optional(),
+  DB_PORT: Joi.number().min(0).max(65535).required(),
+  DB_USER: Joi.string().required(),
+  DB_PASS: Joi.string().required(),
+  API_URL: Joi.string().required(),
+  APP_URL: Joi.string().required(),
+  ALLOWED_URL: Joi.string().optional().allow(''),
+  JWT_ACCESS_SECRET: Joi.string().default('default_secret'),
+  JWT_ACCESS_EXPIRATION: Joi.string()
+    .pattern(/^\d+\s*(s|m|h|d|w|y)$/)
+    .default('15m')
+    .description('Access token expiration (e.g. 15m, 1h, 7d)'),
+  JWT_REFRESH_SECRET: Joi.string().default('default_refresh_secret'),
+  JWT_REFRESH_EXPIRATION: Joi.string()
+    .pattern(/^\d+\s*(s|m|h|d|w|y)$/)
+    .default('7d')
+    .description('Refresh token expiration (e.g. 60m, 7d, 30d)'),
+  AUTH_API_KEY_DEFAULT_EXPIRATION: Joi.string()
+    .pattern(/^\d+\s*(s|m|h|d|w)$/)
+    .default('1h')
+    .description('Default login API key expiration (e.g. 30m, 1h, 1d)'),
+  AUTH_API_KEY_MAX_EXPIRATION: Joi.string()
+    .pattern(/^\d+\s*(s|m|h|d|w)$/)
+    .default('30d')
+    .description('Maximum allowed login API key expiration'),
+  JWT_ISSUER: Joi.string().default('gatuno-auth'),
+  JWT_AUDIENCE: Joi.string().default('gatuno-api'),
+  WEBAUTHN_RP_NAME: Joi.string().default('Gatuno'),
+  WEBAUTHN_RP_ID: Joi.string().optional().allow(''),
+  WEBAUTHN_ALLOWED_ORIGINS: Joi.string()
+    .optional()
+    .allow('')
+    .description(
+      'Comma-separated origins for WebAuthn. Falls back to ALLOWED_URL when empty',
+    ),
+  WEBAUTHN_CHALLENGE_TTL_MS: Joi.number()
+    .min(1000)
+    .default(300000)
+    .description('TTL in ms for WebAuthn challenges'),
+  MFA_ISSUER_NAME: Joi.string().default('Gatuno'),
+  MFA_ENCRYPTION_SECRET: Joi.string().min(16).default('change-this-mfa-secret'),
+  MFA_STEP_UP_ENABLED: Joi.boolean()
+    .default(true)
+    .description('Enable MFA step-up verification for risky/new devices'),
+  MFA_CHALLENGE_EXPIRATION: Joi.string()
+    .pattern(/^\d+\s*(s|m|h|d)$/)
+    .default('5m')
+    .description('Short-lived MFA challenge token expiration'),
+  MAX_SESSIONS_PER_USER: Joi.number()
+    .min(0)
+    .default(0)
+    .description('Max simultaneous sessions per user. 0 = unlimited'),
+  SALT_LENGTH: Joi.number().min(1).default(16),
+  PASSWORD_KEY_LENGTH: Joi.number().min(1).default(64),
+  REDIS_HOST: Joi.string().required(),
+  REDIS_PORT: Joi.number().min(0).max(65535).default(6379),
+  REDIS_PASSWORD: Joi.string().optional().allow(''),
+  USERADMIN_EMAIL: Joi.string().email().required(),
+  USERADMIN_PASSWORD: Joi.string().required(),
+  // Queue Concurrency Settings
+  CHAPTER_SCRAPING_CONCURRENCY: Joi.number().min(1).default(6),
+  COVER_IMAGE_CONCURRENCY: Joi.number().min(1).default(3),
+  FIX_CHAPTER_CONCURRENCY: Joi.number().min(1).default(2),
+  BOOK_UPDATE_CONCURRENCY: Joi.number()
+    .min(1)
+    .default(2)
+    .description('Concurrency for book update queue'),
+  // Book Auto-Update Settings
+  BOOK_UPDATE_ENABLED: Joi.boolean()
+    .default(true)
+    .description('Enable automatic book update checks'),
+  BOOK_UPDATE_CRON: Joi.string()
+    .default('0 */6 * * *')
+    .description(
+      'Cron expression for book update schedule (default: every 6 hours)',
+    ),
+  // Monitoring / Metrics
+  METRICS_ENABLED: Joi.boolean()
+    .default(true)
+    .description('Enable Prometheus metrics endpoint'),
+  METRICS_PATH: Joi.string()
+    .default('/api/metrics')
+    .description('Path where metrics are exposed'),
+  METRICS_PREFIX: Joi.string()
+    .default('gatuno_')
+    .description('Prefix applied to metrics'),
+  GRAFANA_PORT: Joi.number()
+    .min(0)
+    .max(65535)
+    .default(3002)
+    .description('Local Grafana port used for developer convenience'),
+  PROMETHEUS_SCRAPE_INTERVAL: Joi.string()
+    .default('10s')
+    .description('Default scrape interval used by Prometheus rules/docs'),
+  HEALTH_HEAP_LIMIT_MB: Joi.number()
+    .min(1)
+    .default(300)
+    .description('Heap limit in MB for health check'),
+  HEALTH_RSS_LIMIT_MB: Joi.number()
+    .min(1)
+    .default(500)
+    .description('RSS limit in MB for health check'),
+  HEALTH_READINESS_HEAP_LIMIT_MB: Joi.number()
+    .min(1)
+    .default(400)
+    .description('Heap limit in MB for readiness check'),
+  HEALTH_DISK_THRESHOLD_PERCENT: Joi.number()
+    .min(0)
+    .max(1)
+    .default(0.7)
+    .description('Disk usage threshold (fraction) for storage health check'),
+  // Download Cache Settings
+  DOWNLOAD_CACHE_THRESHOLD_MB: Joi.number()
+    .min(1)
+    .default(100)
+    .description(
+      'Size threshold in MB for switching from buffer to streaming mode in downloads',
+    ),
+  KAFKA_HOST: Joi.string().default('kafka').description('Kafka broker host'),
+  KAFKA_PORT: Joi.number().default(9092).description('Kafka broker port'),
+  NANOMQ_HOST: Joi.string().default('nanomq').description('NanoMQ broker host'),
+  NANOMQ_PORT: Joi.number()
+    .min(0)
+    .max(65535)
+    .default(1883)
+    .description('NanoMQ MQTT port'),
+  NANOMQ_WS_PORT: Joi.number()
+    .min(0)
+    .max(65535)
+    .default(8083)
+    .description('NanoMQ MQTT over WebSocket port'),
+  ANDROID_PACKAGE_NAME: Joi.string()
+    .default('com.gatuno.app')
+    .description('Android application package name'),
+  ANDROID_SHA256_FINGERPRINTS: Joi.string()
+    .default(
+      '00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00',
+    )
+    .description('Comma-separated SHA-256 fingerprints for Android app'),
+  LOG_LEVEL: Joi.string()
+    .optional()
+    .default('context=*;level=info')
+    .description(
+      'Log level rules (e.g. debug or context=AuthService;level=debug)',
+    ),
+  ENABLE_SWAGGER: Joi.boolean()
+    .default(false)
+    .description('Force enable Swagger UI regardless of NODE_ENV'),
+  DASHBOARD_OVERVIEW_TTL_MINUTES: Joi.number()
+    .min(1)
+    .default(10)
+    .description('TTL in minutes for dashboard overview cache'),
+  FILE_CLEANUP_ENABLED: Joi.boolean().default(true),
+  FILE_CLEANUP_RETENTION_DAYS: Joi.number().min(1).default(7),
+  RUSTFS_ENDPOINT: Joi.string().default('http://rustfs:9000'),
+  RUSTFS_BUCKET: Joi.string().default('gatuno-files'),
+  RUSTFS_REGION: Joi.string().default('us-east-1'),
+  RUSTFS_ACCESS_KEY_ID: Joi.string().allow(''),
+  RUSTFS_SECRET_ACCESS_KEY: Joi.string().allow(''),
+  RUSTFS_PUBLIC_URL: Joi.string().allow(''),
+  VAPID_PUBLIC_KEY: Joi.string().allow(''),
+  VAPID_PRIVATE_KEY: Joi.string().allow(''),
+  VAPID_SUBJECT: Joi.string().allow(''),
+});

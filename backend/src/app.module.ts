@@ -9,6 +9,8 @@ import { AuthModule } from './auth/auth.module';
 import { FeedsModule } from './feeds/feeds.module';
 import { ScraperModule } from './scraper/scraper.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
+import { LoggingModule } from './logging/logging.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -40,10 +42,12 @@ import { WebhooksModule } from './webhooks/webhooks.module';
       }),
       inject: [ConfigService],
     }),
-    AuthModule, 
-    FeedsModule, 
-    ScraperModule, 
+    AuthModule,
+    FeedsModule,
+    ScraperModule,
     WebhooksModule,
+    LoggingModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

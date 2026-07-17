@@ -10,15 +10,28 @@ import { Subscription } from './entities/subscription.entity';
 export class FeedsService {
   constructor(
     @InjectRepository(Source) private sourceRepository: Repository<Source>,
-    @InjectRepository(Subscription) private subscriptionRepository: Repository<Subscription>,
+    @InjectRepository(Subscription)
+    private subscriptionRepository: Repository<Subscription>,
     @InjectQueue('scraper') private scraperQueue: Queue,
   ) {}
 
-  async subscribe(userId: string, data: { url: string; name: string; isPrivate: boolean; selectors?: any; authStorageState?: string; tags?: string[] }) {
+  async subscribe(
+    userId: string,
+    data: {
+      url: string;
+      name: string;
+      isPrivate: boolean;
+      selectors?: any;
+      authStorageState?: string;
+      tags?: string[];
+    },
+  ) {
     let source: Source | null = null;
 
     if (!data.isPrivate) {
-      source = await this.sourceRepository.findOne({ where: { url: data.url, isPrivate: false } });
+      source = await this.sourceRepository.findOne({
+        where: { url: data.url, isPrivate: false },
+      });
     }
 
     if (!source) {
@@ -34,20 +47,21 @@ export class FeedsService {
     const subscription = new Subscription();
     subscription.user = { id: userId } as any;
     subscription.source = source;
-    subscription.tags = data.tags && data.tags.length > 0 ? data.tags : ['default'];
+    subscription.tags =
+      data.tags && data.tags.length > 0 ? data.tags : ['default'];
     subscription.customName = data.name;
-    
+
     if (data.isPrivate && data.authStorageState) {
       subscription.authStorageState = data.authStorageState;
     }
 
     const saved = await this.subscriptionRepository.save(subscription);
-    
+
     // Add job to fetch RSS now!
     await this.scraperQueue.add('fetch', {
       url: source.url,
       sourceId: source.id,
-      authStorageState: data.authStorageState
+      authStorageState: data.authStorageState,
     });
 
     return saved;
@@ -60,39 +74,47 @@ export class FeedsService {
     });
   }
 
-  async getArticles(userId: string, tag?: string, search?: string, page: number = 1, limit: number = 50) {
+  async getArticles(
+    userId: string,
+    tag?: string,
+    search?: string,
+    page: number = 1,
+    limit: number = 50,
+  ) {
     // Buscar todos os sources do usuario (filtrado por tag se fornecida)
-    const query = this.subscriptionRepository.createQueryBuilder('subscription')
+    const query = this.subscriptionRepository
+      .createQueryBuilder('subscription')
       .leftJoinAndSelect('subscription.source', 'source')
       .leftJoinAndSelect('subscription.user', 'user')
       .where('user.id = :userId', { userId });
-      
+
     if (tag) {
       query.andWhere('subscription.tags LIKE :tag', { tag: `%${tag}%` });
     }
-    
+
     const subscriptions = await query.getMany();
-    
+
     if (!subscriptions.length) {
       return {
         data: [],
         total: 0,
         page,
         limit,
-        totalPages: 0
+        totalPages: 0,
       };
     }
-    
-    const sourceIds = subscriptions.map(s => s.source.id);
-    
-    const articleQuery = this.sourceRepository.manager.createQueryBuilder('article', 'article')
+
+    const sourceIds = subscriptions.map((s) => s.source.id);
+
+    const articleQuery = this.sourceRepository.manager
+      .createQueryBuilder('article', 'article')
       .leftJoinAndSelect('article.source', 'source')
       .where('source.id IN (:...sourceIds)', { sourceIds });
 
     if (search) {
       articleQuery.andWhere(
         '(LOWER(article.title) LIKE LOWER(:search) OR LOWER(article.description) LIKE LOWER(:search))',
-        { search: `%${search}%` }
+        { search: `%${search}%` },
       );
     }
 
@@ -109,20 +131,29 @@ export class FeedsService {
       total,
       page,
       limit,
-      totalPages: Math.ceil(total / limit)
+      totalPages: Math.ceil(total / limit),
     };
   }
 
-  async updateSubscription(userId: string, subscriptionId: string, data: { customName?: string; tags?: string[]; url?: string; selectors?: any }) {
-    const sub = await this.subscriptionRepository.findOne({ 
+  async updateSubscription(
+    userId: string,
+    subscriptionId: string,
+    data: {
+      customName?: string;
+      tags?: string[];
+      url?: string;
+      selectors?: any;
+    },
+  ) {
+    const sub = await this.subscriptionRepository.findOne({
       where: { id: subscriptionId, user: { id: userId } as any },
-      relations: { source: true }
+      relations: { source: true },
     });
     if (!sub) throw new Error('Subscription not found');
-    
+
     if (data.customName !== undefined) sub.customName = data.customName;
     if (data.tags !== undefined) sub.tags = data.tags;
-    
+
     if (data.url !== undefined || data.selectors !== undefined) {
       if (data.url !== undefined) sub.source.url = data.url;
       if (data.selectors !== undefined) {
@@ -131,21 +162,21 @@ export class FeedsService {
       }
       await this.sourceRepository.save(sub.source);
     }
-    
+
     return this.subscriptionRepository.save(sub);
   }
 
   async refreshSubscription(userId: string, subscriptionId: string) {
-    const sub = await this.subscriptionRepository.findOne({ 
+    const sub = await this.subscriptionRepository.findOne({
       where: { id: subscriptionId, user: { id: userId } as any },
-      relations: { source: true }
+      relations: { source: true },
     });
     if (!sub) throw new Error('Subscription not found');
-    
+
     await this.scraperQueue.add('fetch', {
       url: sub.source.url,
       sourceId: sub.source.id,
-      authStorageState: sub.authStorageState
+      authStorageState: sub.authStorageState,
     });
 
     return { success: true };
@@ -154,7 +185,7 @@ export class FeedsService {
   async deleteSubscription(userId: string, subscriptionId: string) {
     return this.subscriptionRepository.delete({
       id: subscriptionId,
-      user: { id: userId } as any
+      user: { id: userId } as any,
     });
   }
 }

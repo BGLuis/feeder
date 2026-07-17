@@ -29,9 +29,9 @@ describe('WebhooksProcessor', () => {
     const secret = 'my-secret';
     const payload = { article: 'Hello' };
     const targetUrl = 'https://webhook.site/test';
-    
+
     const job = {
-      data: { targetUrl, secret, payload }
+      data: { targetUrl, secret, payload },
     } as unknown as Job;
 
     await processor.process(job);
@@ -41,13 +41,16 @@ describe('WebhooksProcessor', () => {
       .update(JSON.stringify(payload))
       .digest('hex');
 
-    expect(global.fetch).toHaveBeenCalledWith(targetUrl, expect.objectContaining({
-      method: 'POST',
-      body: JSON.stringify(payload),
-      headers: {
-        'Content-Type': 'application/json',
-        'x-feeder-signature': expectedSignature,
-      }
-    }));
+    expect(global.fetch).toHaveBeenCalledWith(
+      targetUrl,
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify(payload),
+        headers: {
+          'Content-Type': 'application/json',
+          'x-feeder-signature': expectedSignature,
+        },
+      }),
+    );
   });
 });

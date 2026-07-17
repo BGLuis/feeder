@@ -50,50 +50,74 @@ describe('AuthService', () => {
 
     service = module.get<AuthService>(AuthService);
   });
-  
+
   afterEach(() => {
     jest.clearAllMocks();
   });
 
   describe('register', () => {
     it('should throw BadRequestException if user already exists', async () => {
-      userRepository.findOne.mockResolvedValueOnce({ id: '1', email: 'test@test.com' });
-      await expect(service.register('test@test.com', 'pass')).rejects.toThrow(BadRequestException);
+      userRepository.findOne.mockResolvedValueOnce({
+        id: '1',
+        email: 'test@test.com',
+      });
+      await expect(service.register('test@test.com', 'pass')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should save new user with hashed password', async () => {
       userRepository.findOne.mockResolvedValueOnce(null);
       (bcrypt.hash as jest.Mock).mockResolvedValueOnce('hashed_pass');
-      
+
       const result = await service.register('test@test.com', 'pass');
-      
+
       expect(result).toEqual({ message: 'User registered successfully' });
       expect(bcrypt.hash).toHaveBeenCalledWith('pass', 10);
-      expect(userRepository.save).toHaveBeenCalledWith(expect.objectContaining({ email: 'test@test.com', password: 'hashed_pass' }));
+      expect(userRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: 'test@test.com',
+          password: 'hashed_pass',
+        }),
+      );
     });
   });
 
   describe('login', () => {
     it('should throw UnauthorizedException if user not found', async () => {
       userRepository.findOne.mockResolvedValueOnce(null);
-      await expect(service.login('test@test.com', 'pass')).rejects.toThrow(UnauthorizedException);
+      await expect(service.login('test@test.com', 'pass')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should throw UnauthorizedException if password does not match', async () => {
-      userRepository.findOne.mockResolvedValueOnce({ id: '1', email: 'test@test.com', password: 'hash' });
+      userRepository.findOne.mockResolvedValueOnce({
+        id: '1',
+        email: 'test@test.com',
+        password: 'hash',
+      });
       (bcrypt.compare as jest.Mock).mockResolvedValueOnce(false);
-      
-      await expect(service.login('test@test.com', 'wrong_pass')).rejects.toThrow(UnauthorizedException);
+
+      await expect(
+        service.login('test@test.com', 'wrong_pass'),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should return token if login is successful', async () => {
-      userRepository.findOne.mockResolvedValueOnce({ id: '1', email: 'test@test.com', password: 'hash' });
+      userRepository.findOne.mockResolvedValueOnce({
+        id: '1',
+        email: 'test@test.com',
+        password: 'hash',
+      });
       (bcrypt.compare as jest.Mock).mockResolvedValueOnce(true);
-      
+
       const result = await service.login('test@test.com', 'pass');
       expect(result.access_token).toBe('token');
-      expect(jwtService.sign).toHaveBeenCalledWith({ sub: '1', email: 'test@test.com' });
+      expect(jwtService.sign).toHaveBeenCalledWith({
+        sub: '1',
+        email: 'test@test.com',
+      });
     });
   });
 });
-

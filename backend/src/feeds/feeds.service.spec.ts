@@ -23,7 +23,10 @@ describe('FeedsService', () => {
       providers: [
         FeedsService,
         { provide: getRepositoryToken(Source), useValue: sourceRepository },
-        { provide: getRepositoryToken(Subscription), useValue: subscriptionRepository },
+        {
+          provide: getRepositoryToken(Subscription),
+          useValue: subscriptionRepository,
+        },
       ],
     }).compile();
 
@@ -33,19 +36,29 @@ describe('FeedsService', () => {
   describe('subscribe (Deduplication Intents)', () => {
     it('should link to existing global source if isPrivate is false and URL exists', async () => {
       // Intention: Avoid scraping the same public feed multiple times by reusing the Source.
-      const existingSource = { id: 'source-1', url: 'http://rss.com', isPrivate: false };
+      const existingSource = {
+        id: 'source-1',
+        url: 'http://rss.com',
+        isPrivate: false,
+      };
       sourceRepository.findOne.mockResolvedValueOnce(existingSource);
 
-      await service.subscribe('user-1', { url: 'http://rss.com', name: 'My Feed', isPrivate: false });
+      await service.subscribe('user-1', {
+        url: 'http://rss.com',
+        name: 'My Feed',
+        isPrivate: false,
+      });
 
-      expect(sourceRepository.findOne).toHaveBeenCalledWith({ where: { url: 'http://rss.com', isPrivate: false } });
-      expect(sourceRepository.save).not.toHaveBeenCalled(); 
-      
+      expect(sourceRepository.findOne).toHaveBeenCalledWith({
+        where: { url: 'http://rss.com', isPrivate: false },
+      });
+      expect(sourceRepository.save).not.toHaveBeenCalled();
+
       expect(subscriptionRepository.save).toHaveBeenCalledWith(
         expect.objectContaining({
           user: { id: 'user-1' },
           source: existingSource,
-        })
+        }),
       );
     });
 
@@ -53,22 +66,27 @@ describe('FeedsService', () => {
       // Intention: Private feeds (e.g. requiring login) cannot be shared. A new Source must be created.
       const authState = JSON.stringify({ cookies: [] });
 
-      await service.subscribe('user-1', { url: 'http://private.com', name: 'Private', isPrivate: true, authStorageState: authState });
+      await service.subscribe('user-1', {
+        url: 'http://private.com',
+        name: 'Private',
+        isPrivate: true,
+        authStorageState: authState,
+      });
 
-      expect(sourceRepository.findOne).not.toHaveBeenCalled(); 
-      
+      expect(sourceRepository.findOne).not.toHaveBeenCalled();
+
       expect(sourceRepository.save).toHaveBeenCalledWith(
         expect.objectContaining({
           url: 'http://private.com',
           isPrivate: true,
-        })
+        }),
       );
 
       expect(subscriptionRepository.save).toHaveBeenCalledWith(
         expect.objectContaining({
           user: { id: 'user-1' },
           authStorageState: authState,
-        })
+        }),
       );
     });
   });

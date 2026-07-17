@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, Relation } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
+  type Relation,
+} from 'typeorm';
 import { Source } from './source.entity';
 import { UserArticleState } from './user-article-state.entity';
 
@@ -7,7 +14,7 @@ export class Article {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Source, source => source.articles, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Source, (source) => source.articles, { onDelete: 'CASCADE' })
   source: Relation<Source>;
 
   @Column()
@@ -25,6 +32,6 @@ export class Article {
   @Column({ type: 'datetime', nullable: true })
   publishedAt: Date;
 
-  @OneToMany(() => UserArticleState, state => state.article)
+  @OneToMany(() => UserArticleState, (state) => state.article)
   userStates: Relation<UserArticleState>[];
 }

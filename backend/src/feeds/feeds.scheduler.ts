@@ -22,10 +22,7 @@ export class FeedsScheduler {
 
     // Fetch sources that need fetching
     const sourcesToFetch = await this.sourceRepository.find({
-      where: [
-        { nextFetchAt: LessThanOrEqual(now) },
-        { nextFetchAt: IsNull() },
-      ],
+      where: [{ nextFetchAt: LessThanOrEqual(now) }, { nextFetchAt: IsNull() }],
     });
 
     if (sourcesToFetch.length === 0) {
@@ -43,9 +40,11 @@ export class FeedsScheduler {
       await this.scraperQueue.add(
         'fetch',
         { url: source.url, sourceId: source.id },
-        { delay: i * SPACING_MS }
+        { delay: i * SPACING_MS },
       );
-      this.logger.log(`Queued source ${source.id} (${source.url}) with delay ${i * SPACING_MS}ms`);
+      this.logger.log(
+        `Queued source ${source.id} (${source.url}) with delay ${i * SPACING_MS}ms`,
+      );
     }
   }
 }

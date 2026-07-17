@@ -1,4 +1,15 @@
-import { Controller, Post, Body, Get, UseGuards, Request, Delete, Param, Patch, Query } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  UseGuards,
+  Request,
+  Delete,
+  Param,
+  Patch,
+  Query,
+} from '@nestjs/common';
 import { FeedsService } from './feeds.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -24,15 +35,31 @@ export class FeedsController {
     @Query('tag') tag?: string,
     @Query('search') search?: string,
     @Query('page') page?: string,
-    @Query('limit') limit?: string
+    @Query('limit') limit?: string,
   ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 50;
-    return this.feedsService.getArticles(req.user.id, tag, search, pageNum, limitNum);
+    return this.feedsService.getArticles(
+      req.user.id,
+      tag,
+      search,
+      pageNum,
+      limitNum,
+    );
   }
 
   @Patch(':id')
-  async updateSubscription(@Request() req: any, @Param('id') id: string, @Body() body: { customName?: string; tags?: string[]; url?: string; selectors?: any }) {
+  async updateSubscription(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body()
+    body: {
+      customName?: string;
+      tags?: string[];
+      url?: string;
+      selectors?: any;
+    },
+  ) {
     return this.feedsService.updateSubscription(req.user.id, id, body);
   }
 
