@@ -2,7 +2,92 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  /* Motion budget: honour the OS "reduce motion" setting everywhere. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* Coherent focus ring — mirrors the emerald ring the inputs already use. */
+  :where(a, button, [role='button'], summary, [tabindex]):focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px rgb(9 9 11),
+      0 0 0 4px rgb(16 185 129 / 0.5);
+    border-radius: 0.5rem;
+  }
+}
+
 @layer utilities {
+  /* Physical click feedback for any interactive element. */
+  .press {
+    transition:
+      transform 120ms ease-out,
+      background-color 200ms,
+      color 200ms,
+      box-shadow 200ms;
+  }
+  .press:active {
+    transform: scale(0.97);
+  }
+
+  /* Skeleton placeholder that takes the shape of the content it replaces. */
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background-color: rgb(24 24 27);
+  }
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent 0,
+      rgb(255 255 255 / 0.06) 50%,
+      transparent 100%
+    );
+    animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  }
+  @keyframes skeleton-shimmer {
+    to {
+      transform: translateX(100%);
+    }
+  }
+
+  /* Cover image entrance: fades and de-blurs once decoded. */
+  .media-fade {
+    opacity: 0;
+    filter: blur(8px);
+    transition:
+      opacity 220ms ease-out,
+      filter 220ms ease-out;
+  }
+  .media-fade.is-loaded {
+    opacity: 1;
+    filter: blur(0);
+  }
+
+  /* Staggered list entrance — set --i on each row. */
+  .rise-in {
+    animation: rise-in 260ms ease-out backwards;
+    animation-delay: calc(var(--i, 0) * 40ms);
+  }
+  @keyframes rise-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+
   /* Estilização Global da Scrollbar */
   ::-webkit-scrollbar {
     width: 10px;

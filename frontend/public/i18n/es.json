@@ -19,7 +19,7 @@
     "PREFERENCES_TITLE": "Preferencias de la aplicación",
     "LANGUAGE_DESC": "Elige tu idioma preferido para la interfaz.",
     "DARK_MODE": "Modo oscuro",
-    "DARK_MODE_DESC": "La aplicación está permanentemente bloqueada en modo oscuro. Porque se ve mejor."
+    "DARK_MODE_DESC": "Alterna entre claro y oscuro. Tu elección se guarda en este dispositivo."
   },
   "SETUP": {
     "WELCOME": "Bienvenido a Feeder",
