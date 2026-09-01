@@ -16,6 +16,15 @@ import { decryptSecret } from '../common/crypto/secret-box';
 const TITLE_MAX = 512;
 const CONTENT_MAX = 8_000;
 const MAX_ITEMS = 50;
+// Below this pixel dimension an image is almost always an icon, avatar or
+// tracking pixel — not worth showing as an article cover.
+const MIN_IMAGE_DIM = 200;
+// A width we ask CDNs for when we can only see a small one in the feed.
+const TARGET_IMAGE_WIDTH = 1600;
+// Per feed run, how many article pages we may fetch just to read `og:image`.
+const OG_FETCH_MAX = 20;
+const OG_FETCH_TIMEOUT_MS = 8_000;
+const OG_HTML_SCAN_BYTES = 256 * 1024;
 const FEED_BYTES_MAX = 5 * 1024 * 1024;
 const NAV_TIMEOUT_MS = 30_000;
 const SCRIPT_TIMEOUT_MS = 8_000;
@@ -57,7 +66,170 @@ function sanitizeImageUrl(
   base: string,
 ): string | null {
   const resolved = resolveMaybeRelative(raw ?? undefined, base);
-  return resolved && isHttpUrl(resolved) ? resolved : null;
+  if (!resolved || !isHttpUrl(resolved)) return null;
+  return maximizeImageUrl(resolved);
+}
+
+/**
+ * Rewrite a CDN/thumbnail image URL to point at the largest version the same
+ * host can serve. This is not upscaling — feeds routinely embed a *resized*
+ * URL (`?w=150`, `-150x150.jpg`, an image-proxy prefix) whose full-resolution
+ * original is one transform away. We unwrap proxies and raise/drop size hints;
+ * a wrong guess just 404s and the client falls back to its monogram.
+ */
+function maximizeImageUrl(url: string): string {
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    return url;
+  }
+
+  // 1. Image proxies that carry the real source as the trailing path segment
+  //    (Substack: /image/fetch/w_150,c_limit/https%3A%2F%2F...).
+  const proxied = u.pathname.match(/\/(https?%3A%2F%2F.+)$/i);
+  if (proxied) {
+    try {
+      const inner = decodeURIComponent(proxied[1]);
+      if (isHttpUrl(inner) && inner !== url) return maximizeImageUrl(inner);
+    } catch {
+      /* fall through */
+    }
+  }
+
+  // 2. Query-string proxies (Next.js /_next/image?url=..., wsrv/images.weserv).
+  for (const key of ['url', 'u', 'image', 'src']) {
+    const inner = u.searchParams.get(key);
+    if (!inner) continue;
+    try {
+      const decoded = decodeURIComponent(inner);
+      const abs = decoded.startsWith('//') ? `https:${decoded}` : decoded;
+      if (isHttpUrl(abs) && abs !== url) return maximizeImageUrl(abs);
+    } catch {
+      /* fall through */
+    }
+  }
+
+  // 3. Cloudflare / Cloudinary path transforms: /cdn-cgi/image/width=200,.../rest
+  u.pathname = u.pathname.replace(
+    /\/(cdn-cgi\/image|image\/upload)\/([^/]+)\//i,
+    (_m, prefix: string, opts: string) => {
+      const raised = opts
+        .replace(/(?:w|width)=\d+/i, `width=${TARGET_IMAGE_WIDTH}`)
+        .replace(/w_\d+/i, `w_${TARGET_IMAGE_WIDTH}`)
+        .replace(/,?(?:h|height)=\d+/i, '')
+        .replace(/,?h_\d+/i, '')
+        .replace(/,?q(?:uality)?[=_]\d+/i, '');
+      return `/${prefix}/${raised}/`;
+    },
+  );
+
+  // 4. WordPress-style resize suffix: name-1024x576.jpg -> name.jpg (WP keeps
+  //    the original). Only when the embedded size is modest.
+  const wp = u.pathname.match(
+    /-(\d{2,4})x(\d{2,4})(\.(?:jpe?g|png|webp|gif))$/i,
+  );
+  if (wp && (toInt(wp[1]) < 1200 || toInt(wp[2]) < 1200)) {
+    u.pathname = u.pathname.slice(0, u.pathname.length - wp[0].length) + wp[3];
+  }
+
+  // 5. Bare size hints in the query string.
+  for (const p of [...u.searchParams.keys()]) {
+    const key = p.toLowerCase();
+    const n = parseInt(u.searchParams.get(p) ?? '', 10);
+    if (!Number.isFinite(n)) continue;
+    if ((key === 'w' || key === 'width' || key === 'maxwidth') && n < 1200) {
+      u.searchParams.set(p, String(TARGET_IMAGE_WIDTH));
+    } else if (key === 'h' || key === 'height' || key === 'maxheight') {
+      u.searchParams.delete(p);
+    } else if ((key === 'q' || key === 'quality') && n < 85) {
+      u.searchParams.set(p, '90');
+    } else if (
+      ['size', 'sz', 'resize', 'fit', 'crop', 's'].includes(key) &&
+      n < 500
+    ) {
+      u.searchParams.delete(p);
+    }
+  }
+
+  return u.toString();
+}
+
+/** Heuristic: does this URL look like a small thumbnail worth replacing? */
+function looksLikeThumbnail(url: string | null): boolean {
+  if (!url) return true;
+  return /(-\d{2,3}x\d{2,3}\.(?:jpe?g|png|webp)|[?&](?:w|width|h|height|size|sz)=\d{1,3}(?:&|$)|\/thumb(?:s|nail)?\/|_thumb\.|_small\.|=s\d{2,3}(?:-c)?$|\/\d{2,3}x\d{2,3}\/)/i.test(
+    url,
+  );
+}
+
+function toInt(value: string | number | null | undefined): number {
+  const n = parseInt(String(value ?? ''), 10);
+  return Number.isFinite(n) ? n : 0;
+}
+
+/** Pick the highest-resolution candidate from a `srcset` attribute. */
+function largestFromSrcset(srcset: string | null | undefined): string | null {
+  if (!srcset) return null;
+  let best: { url: string; weight: number } | null = null;
+  for (const part of srcset.split(',')) {
+    const [url, descriptor] = part.trim().split(/\s+/, 2);
+    if (!url) continue;
+    const weight = descriptor?.endsWith('w')
+      ? toInt(descriptor)
+      : descriptor?.endsWith('x')
+        ? parseFloat(descriptor) * 1000
+        : 1;
+    if (!best || weight > best.weight) best = { url, weight };
+  }
+  return best?.url ?? null;
+}
+
+/**
+ * Choose the largest usable image from raw HTML: prefer the `<img>` with the
+ * biggest declared width, fall back to the first, and mine `srcset` for a
+ * higher-resolution source than the bare `src`.
+ */
+function pickLargestImgFromHtml(html: string): string | null {
+  const tags = String(html).match(/<img[^>]+>/gi);
+  if (!tags) return null;
+  let best: { url: string; width: number } | null = null;
+  let firstAny: string | null = null;
+  for (const tag of tags) {
+    const src =
+      largestFromSrcset(tag.match(/srcset=["']([^"']+)["']/i)?.[1]) ??
+      tag.match(/\bsrc=["']([^"']+)["']/i)?.[1] ??
+      tag.match(/data-(?:src|original|lazy-src)=["']([^"']+)["']/i)?.[1] ??
+      null;
+    if (!src || src.startsWith('data:')) continue;
+    if (!firstAny) firstAny = src;
+    const width = toInt(tag.match(/\bwidth=["']?(\d+)/i)?.[1]);
+    if (width && width < MIN_IMAGE_DIM) continue;
+    if (!best || width > best.width) best = { url: src, width };
+  }
+  return best?.url ?? firstAny;
+}
+
+interface MediaEntry {
+  $?: { url?: string; width?: string; type?: string; medium?: string };
+}
+
+/** Largest `$.url` from an array/single of `media:*` entries with `$.width`. */
+function pickLargestMedia(
+  entries: MediaEntry | MediaEntry[] | null | undefined,
+): string | null {
+  const list = Array.isArray(entries) ? entries : entries ? [entries] : [];
+  let best: { url: string; width: number } | null = null;
+  for (const entry of list) {
+    const attrs = entry?.$;
+    const url = attrs?.url;
+    if (!url) continue;
+    const type = String(attrs.type ?? attrs.medium ?? '');
+    if (type && !type.startsWith('image') && type !== 'image') continue;
+    const width = toInt(attrs.width);
+    if (!best || width > best.width) best = { url, width };
+  }
+  return best?.url ?? null;
 }
 
 @Processor('scraper', { concurrency: 2, lockDuration: 120_000 })
@@ -199,6 +371,7 @@ export class ScraperProcessor extends WorkerHost implements OnModuleDestroy {
     const feed = await this.rssParser.parseString(buf.toString('utf8'));
 
     const created: Article[] = [];
+    let ogBudget = OG_FETCH_MAX;
     for (const item of feed.items) {
       if (!item.link) continue;
       const exists = await this.articleRepository.findOne({
@@ -233,10 +406,18 @@ export class ScraperProcessor extends WorkerHost implements OnModuleDestroy {
         item.contentSnippet || strippedContent,
         CONTENT_MAX,
       );
-      article.imageUrl = sanitizeImageUrl(
+      let imageUrl = sanitizeImageUrl(
         this.extractRssImage(anyItem, rawContent),
         item.link,
       );
+      // The feed only gave us a thumbnail (or nothing) — the article page's
+      // og:image is almost always the full-size hero the site itself shows.
+      if (looksLikeThumbnail(imageUrl) && ogBudget > 0) {
+        ogBudget--;
+        const og = await this.fetchOgImage(item.link, signal);
+        if (og) imageUrl = og;
+      }
+      article.imageUrl = imageUrl;
 
       const parsedDate = item.pubDate ? new Date(item.pubDate) : null;
       article.publishedAt =
@@ -263,12 +444,14 @@ export class ScraperProcessor extends WorkerHost implements OnModuleDestroy {
     ) {
       return anyItem.enclosure.url;
     }
+    // Prefer full-resolution `media:content` (largest declared width) over a
+    // `media:thumbnail`, which feeds tend to cap at ~150px.
     return (
+      pickLargestMedia(anyItem.mediaGroup?.['media:content']) ??
+      pickLargestMedia(anyItem.mediaContent) ??
+      pickLargestImgFromHtml(rawContent) ??
       anyItem.mediaGroup?.['media:thumbnail']?.[0]?.$?.url ??
-      anyItem.mediaGroup?.['media:content']?.[0]?.$?.url ??
-      anyItem.mediaContent?.[0]?.$?.url ??
       anyItem.mediaThumbnail?.[0]?.$?.url ??
-      String(rawContent).match(/<img[^>]+src=["']([^"']+)["']/i)?.[1] ??
       null
     );
   }
@@ -436,13 +619,7 @@ export class ScraperProcessor extends WorkerHost implements OnModuleDestroy {
       }
       if (source.selectors.image) {
         const im = await el.$(source.selectors.image);
-        if (im) {
-          image = sanitizeImageUrl(
-            (await im.getAttribute('src')) ||
-              (await im.getAttribute('content')),
-            origin,
-          );
-        }
+        if (im) image = sanitizeImageUrl(await this.readImageAttr(im), origin);
       }
 
       if (!isHttpUrl(itemUrl) || (await this.isDuplicate(itemUrl, source))) {
@@ -491,14 +668,17 @@ export class ScraperProcessor extends WorkerHost implements OnModuleDestroy {
       }
       if (source.selectors.image) {
         const el = await page.$(source.selectors.image);
-        if (el) {
-          image = sanitizeImageUrl(
-            (await el.getAttribute('src')) ||
-              (await el.getAttribute('content')),
-            origin,
-          );
-        }
+        if (el) image = sanitizeImageUrl(await this.readImageAttr(el), origin);
       }
+    }
+
+    // Fall back to the page's social-share image — usually a full-size asset.
+    if (!image) {
+      const og = await page.$(
+        'meta[property="og:image"], meta[name="og:image"], meta[name="twitter:image"], meta[property="twitter:image"]',
+      );
+      if (og)
+        image = sanitizeImageUrl(await og.getAttribute('content'), origin);
     }
 
     if (!isHttpUrl(itemUrl) || (await this.isDuplicate(itemUrl, source))) {
@@ -518,6 +698,70 @@ export class ScraperProcessor extends WorkerHost implements OnModuleDestroy {
   }
 
   // ------------------------------------------------------------- helpers ----
+
+  /**
+   * Read the best image URL off a scraped element: the largest `srcset`
+   * candidate wins, then `src`, then common lazy-load attributes, then a
+   * `<meta content>` value.
+   */
+  private async readImageAttr(el: {
+    getAttribute(name: string): Promise<string | null>;
+  }): Promise<string | null> {
+    return (
+      largestFromSrcset(await el.getAttribute('srcset')) ||
+      (await el.getAttribute('src')) ||
+      (await el.getAttribute('data-src')) ||
+      (await el.getAttribute('data-original')) ||
+      (await el.getAttribute('data-lazy-src')) ||
+      (await el.getAttribute('content'))
+    );
+  }
+
+  /**
+   * Fetch just the `<head>` of an article page and read its social-share image
+   * (`og:image` / `twitter:image`). Bounded: capped byte read, short timeout,
+   * SSRF-guarded, and rate-limited by the caller's per-run budget.
+   */
+  private async fetchOgImage(
+    pageUrl: string,
+    signal: AbortSignal,
+  ): Promise<string | null> {
+    try {
+      await assertUrlAllowed(pageUrl, this.allowedHosts);
+      const res = await safeFetch(
+        pageUrl,
+        {
+          headers: { accept: 'text/html,application/xhtml+xml' },
+          signal: AbortSignal.any([
+            signal,
+            AbortSignal.timeout(OG_FETCH_TIMEOUT_MS),
+          ]),
+        },
+        this.allowedHosts,
+      );
+      if (!res.ok) return null;
+
+      const buf = Buffer.from(await res.arrayBuffer());
+      const html = buf.subarray(0, OG_HTML_SCAN_BYTES).toString('utf8');
+      const head = html.split(/<\/head>/i)[0] ?? html;
+
+      const raw =
+        head.match(
+          /<meta[^>]+(?:property|name)=["'](?:og:image(?::secure_url)?|twitter:image(?::src)?)["'][^>]*\scontent=["']([^"']+)["']/i,
+        )?.[1] ??
+        head.match(
+          /<meta[^>]+\scontent=["']([^"']+)["'][^>]*(?:property|name)=["'](?:og:image|twitter:image)["']/i,
+        )?.[1] ??
+        head.match(
+          /<link[^>]+rel=["']image_src["'][^>]+href=["']([^"']+)["']/i,
+        )?.[1] ??
+        null;
+
+      return raw ? sanitizeImageUrl(raw, pageUrl) : null;
+    } catch {
+      return null;
+    }
+  }
 
   private async isDuplicate(url: string, source: Source): Promise<boolean> {
     const existing = await this.articleRepository.findOne({
