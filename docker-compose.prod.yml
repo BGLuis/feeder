@@ -64,8 +64,12 @@ services:
       - DB_NAME=${DB_NAME:-feeder}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - JWT_SECRET=${JWT_SECRET:-sua_chave_secreta_super_segura}
+      # No safe default in prod: env.validation.ts rejects a missing/short secret.
+      - JWT_SECRET=${JWT_SECRET:?set JWT_SECRET (>=32 chars, e.g. openssl rand -hex 32)}
       - JWT_EXPIRATION=${JWT_EXPIRATION:-1d}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:?set ENCRYPTION_KEY (64 hex chars, e.g. openssl rand -hex 32)}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost}
+      - SSRF_ALLOWED_HOSTS=${SSRF_ALLOWED_HOSTS:-}
       - RP_NAME=${RP_NAME:-Feeder App}
       - RP_ID=${RP_ID:-localhost}
       - ORIGIN=${ORIGIN:-http://localhost}

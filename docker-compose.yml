@@ -55,6 +55,7 @@ services:
       - '3000:3000'
       - '9229:9229'
     environment:
+      - NODE_ENV=${NODE_ENV:-development}
       - DB_HOST=mysql
       - DB_PORT=3306
       - DB_USER=${DB_USER:-feederuser}
@@ -62,6 +63,13 @@ services:
       - DB_NAME=${DB_NAME:-feeder}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      # Required by env.validation.ts. Override in a root .env for anything real.
+      - JWT_SECRET=${JWT_SECRET:-dev_only_insecure_jwt_secret_change_me_min32}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-0000000000000000000000000000000000000000000000000000000000000000}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:4200}
+      - SSRF_ALLOWED_HOSTS=${SSRF_ALLOWED_HOSTS:-}
+      - RP_ID=${RP_ID:-localhost}
+      - ORIGIN=${ORIGIN:-http://localhost:4200}
       - NODE_OPTIONS=--max-old-space-size=3072
     depends_on:
       mysql:
