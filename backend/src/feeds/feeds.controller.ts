@@ -12,6 +12,11 @@ import {
 } from '@nestjs/common';
 import { FeedsService } from './feeds.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import {
+  ListArticlesQueryDto,
+  SubscribeDto,
+  UpdateSubscriptionDto,
+} from './dto/feeds.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('feeds')
@@ -19,9 +24,8 @@ export class FeedsController {
   constructor(private readonly feedsService: FeedsService) {}
 
   @Post('subscribe')
-  async subscribe(@Request() req: any, @Body() body: any) {
-    const userId = req.user.id;
-    return this.feedsService.subscribe(userId, body);
+  async subscribe(@Request() req: any, @Body() body: SubscribeDto) {
+    return this.feedsService.subscribe(req.user.id, body);
   }
 
   @Get()
@@ -30,35 +34,15 @@ export class FeedsController {
   }
 
   @Get('articles')
-  async getArticles(
-    @Request() req: any,
-    @Query('tag') tag?: string,
-    @Query('search') search?: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ) {
-    const pageNum = page ? parseInt(page, 10) : 1;
-    const limitNum = limit ? parseInt(limit, 10) : 50;
-    return this.feedsService.getArticles(
-      req.user.id,
-      tag,
-      search,
-      pageNum,
-      limitNum,
-    );
+  async getArticles(@Request() req: any, @Query() query: ListArticlesQueryDto) {
+    return this.feedsService.getArticles(req.user.id, query);
   }
 
   @Patch(':id')
   async updateSubscription(
     @Request() req: any,
     @Param('id') id: string,
-    @Body()
-    body: {
-      customName?: string;
-      tags?: string[];
-      url?: string;
-      selectors?: any;
-    },
+    @Body() body: UpdateSubscriptionDto,
   ) {
     return this.feedsService.updateSubscription(req.user.id, id, body);
   }

@@ -2,6 +2,7 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
+  Index,
   OneToMany,
   Relation,
 } from 'typeorm';
@@ -18,6 +19,7 @@ export class Source {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index()
   @Column()
   url: string;
 
@@ -39,6 +41,7 @@ export class Source {
   @Column({ nullable: true })
   cronSchedule: string;
 
+  @Index()
   @Column({ type: 'datetime', nullable: true })
   nextFetchAt: Date;
 

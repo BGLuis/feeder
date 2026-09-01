@@ -5,6 +5,12 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { Source, SourceType } from './entities/source.entity';
 import { Subscription } from './entities/subscription.entity';
+import { encryptSecret } from '../common/crypto/secret-box';
+import {
+  ListArticlesQueryDto,
+  SubscribeDto,
+  UpdateSubscriptionDto,
+} from './dto/feeds.dto';
 
 @Injectable()
 export class FeedsService {
@@ -15,17 +21,7 @@ export class FeedsService {
     @InjectQueue('scraper') private scraperQueue: Queue,
   ) {}
 
-  async subscribe(
-    userId: string,
-    data: {
-      url: string;
-      name: string;
-      isPrivate: boolean;
-      selectors?: any;
-      authStorageState?: string;
-      tags?: string[];
-    },
-  ) {
+  async subscribe(userId: string, data: SubscribeDto) {
     let source: Source | null = null;
 
     if (!data.isPrivate) {
@@ -38,11 +34,16 @@ export class FeedsService {
       source = new Source();
       source.url = data.url;
       source.name = data.name;
-      source.isPrivate = data.isPrivate;
+      source.isPrivate = data.isPrivate ?? false;
       source.type = data.selectors ? SourceType.SCRAPE : SourceType.RSS;
-      source.selectors = data.selectors;
+      source.selectors = data.selectors ?? null;
       await this.sourceRepository.save(source);
     }
+
+    const encryptedState =
+      data.isPrivate && data.authStorageState
+        ? encryptSecret(data.authStorageState)
+        : undefined;
 
     const subscription = new Subscription();
     subscription.user = { id: userId } as any;
@@ -50,19 +51,11 @@ export class FeedsService {
     subscription.tags =
       data.tags && data.tags.length > 0 ? data.tags : ['default'];
     subscription.customName = data.name;
-
-    if (data.isPrivate && data.authStorageState) {
-      subscription.authStorageState = data.authStorageState;
-    }
+    if (encryptedState) subscription.authStorageState = encryptedState;
 
     const saved = await this.subscriptionRepository.save(subscription);
 
-    // Add job to fetch RSS now!
-    await this.scraperQueue.add('fetch', {
-      url: source.url,
-      sourceId: source.id,
-      authStorageState: data.authStorageState,
-    });
+    await this.enqueueFetch(source, encryptedState);
 
     return saved;
   }
@@ -74,37 +67,28 @@ export class FeedsService {
     });
   }
 
-  async getArticles(
-    userId: string,
-    tag?: string,
-    search?: string,
-    page: number = 1,
-    limit: number = 50,
-  ) {
-    // Buscar todos os sources do usuario (filtrado por tag se fornecida)
-    const query = this.subscriptionRepository
+  async getArticles(userId: string, query: ListArticlesQueryDto = {}) {
+    const { tag, search } = query;
+    const page = Math.max(1, query.page ?? 1);
+    const limit = Math.min(100, Math.max(1, query.limit ?? 50));
+
+    const subQuery = this.subscriptionRepository
       .createQueryBuilder('subscription')
       .leftJoinAndSelect('subscription.source', 'source')
-      .leftJoinAndSelect('subscription.user', 'user')
+      .leftJoin('subscription.user', 'user')
       .where('user.id = :userId', { userId });
 
     if (tag) {
-      query.andWhere('subscription.tags LIKE :tag', { tag: `%${tag}%` });
+      subQuery.andWhere('subscription.tags LIKE :tag', { tag: `%${tag}%` });
     }
 
-    const subscriptions = await query.getMany();
+    const subscriptions = await subQuery.getMany();
 
     if (!subscriptions.length) {
-      return {
-        data: [],
-        total: 0,
-        page,
-        limit,
-        totalPages: 0,
-      };
+      return { data: [], total: 0, page, limit, totalPages: 0 };
     }
 
-    const sourceIds = subscriptions.map((s) => s.source.id);
+    const sourceIds = [...new Set(subscriptions.map((s) => s.source.id))];
 
     const articleQuery = this.sourceRepository.manager
       .createQueryBuilder('article', 'article')
@@ -113,37 +97,24 @@ export class FeedsService {
 
     if (search) {
       articleQuery.andWhere(
-        '(LOWER(article.title) LIKE LOWER(:search) OR LOWER(article.description) LIKE LOWER(:search))',
+        '(LOWER(article.title) LIKE LOWER(:search) OR LOWER(article.content) LIKE LOWER(:search))',
         { search: `%${search}%` },
       );
     }
 
-    const skip = (page - 1) * limit;
-
     const [data, total] = await articleQuery
       .orderBy('article.publishedAt', 'DESC')
-      .skip(skip)
+      .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();
 
-    return {
-      data,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async updateSubscription(
     userId: string,
     subscriptionId: string,
-    data: {
-      customName?: string;
-      tags?: string[];
-      url?: string;
-      selectors?: any;
-    },
+    data: UpdateSubscriptionDto,
   ) {
     const sub = await this.subscriptionRepository.findOne({
       where: { id: subscriptionId, user: { id: userId } as any },
@@ -155,12 +126,38 @@ export class FeedsService {
     if (data.tags !== undefined) sub.tags = data.tags;
 
     if (data.url !== undefined || data.selectors !== undefined) {
-      if (data.url !== undefined) sub.source.url = data.url;
-      if (data.selectors !== undefined) {
-        sub.source.selectors = data.selectors === null ? null : data.selectors;
-        sub.source.type = data.selectors ? SourceType.SCRAPE : SourceType.RSS;
+      const nextUrl = data.url ?? sub.source.url;
+      const nextSelectors =
+        data.selectors === undefined
+          ? sub.source.selectors
+          : data.selectors === null
+            ? null
+            : data.selectors;
+
+      // A Source row can be shared by many users' subscriptions. Only edit it
+      // in place when it is private AND this subscription is its sole owner;
+      // otherwise copy-on-write into a fresh private Source so other
+      // co-subscribers are not repointed / script-injected.
+      const owners = await this.subscriptionRepository.count({
+        where: { source: { id: sub.source.id } },
+      });
+      const soleOwner = sub.source.isPrivate && owners <= 1;
+
+      if (soleOwner) {
+        sub.source.url = nextUrl;
+        sub.source.selectors = nextSelectors;
+        sub.source.type = nextSelectors ? SourceType.SCRAPE : SourceType.RSS;
+        await this.sourceRepository.save(sub.source);
+      } else {
+        const clone = new Source();
+        clone.url = nextUrl;
+        clone.name = sub.source.name;
+        clone.isPrivate = true;
+        clone.selectors = nextSelectors;
+        clone.type = nextSelectors ? SourceType.SCRAPE : SourceType.RSS;
+        await this.sourceRepository.save(clone);
+        sub.source = clone;
       }
-      await this.sourceRepository.save(sub.source);
     }
 
     return this.subscriptionRepository.save(sub);
@@ -173,11 +170,7 @@ export class FeedsService {
     });
     if (!sub) throw new Error('Subscription not found');
 
-    await this.scraperQueue.add('fetch', {
-      url: sub.source.url,
-      sourceId: sub.source.id,
-      authStorageState: sub.authStorageState,
-    });
+    await this.enqueueFetch(sub.source, sub.authStorageState);
 
     return { success: true };
   }
@@ -186,6 +179,19 @@ export class FeedsService {
     return this.subscriptionRepository.delete({
       id: subscriptionId,
       user: { id: userId } as any,
+    });
+  }
+
+  /**
+   * Manual "fetch now" (subscribe / refresh). authStorageState is passed through
+   * already-encrypted; the processor decrypts it. No deterministic jobId here —
+   * the user asked for an immediate run. The cron scheduler dedupes separately.
+   */
+  private async enqueueFetch(source: Source, authStorageState?: string) {
+    await this.scraperQueue.add('fetch', {
+      url: source.url,
+      sourceId: source.id,
+      authStorageState,
     });
   }
 }

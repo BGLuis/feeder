@@ -37,10 +37,12 @@ export class FeedsScheduler {
 
     for (let i = 0; i < sourcesToFetch.length; i++) {
       const source = sourcesToFetch[i];
+      // Deterministic jobId: if a previous run's job for this source is still
+      // waiting/delayed, BullMQ ignores the duplicate instead of piling on.
       await this.scraperQueue.add(
         'fetch',
         { url: source.url, sourceId: source.id },
-        { delay: i * SPACING_MS },
+        { delay: i * SPACING_MS, jobId: `sched:fetch:${source.id}` },
       );
       this.logger.log(
         `Queued source ${source.id} (${source.url}) with delay ${i * SPACING_MS}ms`,

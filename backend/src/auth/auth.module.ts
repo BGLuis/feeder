@@ -16,8 +16,13 @@ import { JwtStrategy } from './jwt.strategy';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET', 'super-secret'),
-        signOptions: { expiresIn: '1d' },
+        // No fallback: env is validated at boot, a missing secret must fail loudly.
+        secret: configService.getOrThrow<string>('JWT_SECRET'),
+        signOptions: {
+          expiresIn: configService.get<string>('JWT_EXPIRATION', '1d') as any,
+          algorithm: 'HS256',
+        },
+        verifyOptions: { algorithms: ['HS256'] },
       }),
       inject: [ConfigService],
     }),

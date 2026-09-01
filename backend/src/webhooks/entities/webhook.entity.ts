@@ -2,12 +2,15 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
+  Index,
   ManyToOne,
   type Relation,
 } from 'typeorm';
 import { User } from '../../auth/entities/user.entity';
 
 @Entity()
+// triggerWebhooks() filters active webhooks by owning user.
+@Index(['user', 'isActive'])
 export class Webhook {
   @PrimaryGeneratedColumn('uuid')
   id: string;

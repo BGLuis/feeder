@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Webhook } from './entities/webhook.entity';
 import * as crypto from 'crypto';
+import { Webhook } from './entities/webhook.entity';
+import { CreateWebhookDto, UpdateWebhookDto } from './dto/webhooks.dto';
 
 @Injectable()
 export class WebhooksService {
@@ -10,16 +11,7 @@ export class WebhooksService {
     @InjectRepository(Webhook) private webhookRepository: Repository<Webhook>,
   ) {}
 
-  async create(
-    userId: string,
-    data: {
-      url: string;
-      secret?: string;
-      triggerType?: 'ALL' | 'TAG' | 'SOURCE';
-      triggerValue?: string;
-      payloadTemplate?: string;
-    },
-  ) {
+  async create(userId: string, data: CreateWebhookDto) {
     const webhook = new Webhook();
     webhook.user = { id: userId } as any;
     webhook.url = data.url;
@@ -33,30 +25,19 @@ export class WebhooksService {
   }
 
   async findAll(userId: string) {
-    return this.webhookRepository.find({
-      where: { user: { id: userId } },
-    });
+    return this.webhookRepository.find({ where: { user: { id: userId } } });
   }
 
-  async update(
-    userId: string,
-    webhookId: string,
-    data: Partial<{
-      url: string;
-      secret: string;
-      triggerType: 'ALL' | 'TAG' | 'SOURCE';
-      triggerValue: string;
-      payloadTemplate: string;
-      isActive: boolean;
-    }>,
-  ) {
+  async update(userId: string, webhookId: string, data: UpdateWebhookDto) {
     const webhook = await this.webhookRepository.findOne({
       where: { id: webhookId, user: { id: userId } as any },
     });
-    if (!webhook) throw new Error('Webhook not found');
+    if (!webhook) throw new NotFoundException('Webhook not found');
 
     if (data.url !== undefined) webhook.url = data.url;
-    if (data.secret !== undefined) webhook.secret = data.secret;
+    // DTO guarantees a non-empty secret of >= 16 chars when present; never
+    // allow downgrading to an empty/weak signing key.
+    if (data.secret) webhook.secret = data.secret;
     if (data.triggerType !== undefined) webhook.triggerType = data.triggerType;
     if (data.triggerValue !== undefined)
       webhook.triggerValue = data.triggerValue;

@@ -1,56 +1,84 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { WebhooksProcessor } from './webhooks.processor';
+import { ConfigService } from '@nestjs/config';
 import { Job } from 'bullmq';
-import * as crypto from 'crypto';
+import { WebhooksProcessor } from './webhooks.processor';
+import { safeFetch, SsrfBlockedError } from '../common/net/ssrf-guard';
+
+jest.mock('../common/net/ssrf-guard', () => {
+  const actual = jest.requireActual('../common/net/ssrf-guard');
+  return { ...actual, safeFetch: jest.fn() };
+});
+
+const mockedSafeFetch = safeFetch as jest.MockedFunction<typeof safeFetch>;
+
+function makeJob(
+  data: Partial<{ targetUrl: string; secret: string; payload: any }>,
+) {
+  return {
+    id: 'job-1',
+    data: {
+      targetUrl: 'https://hooks.example.com/x',
+      secret: 'a-signing-secret-1234',
+      payload: { hello: 'world' },
+      ...data,
+    },
+  } as unknown as Job<any, any, string>;
+}
 
 describe('WebhooksProcessor', () => {
   let processor: WebhooksProcessor;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [WebhooksProcessor],
+      providers: [
+        WebhooksProcessor,
+        { provide: ConfigService, useValue: { get: () => undefined } },
+      ],
     }).compile();
+    processor = module.get(WebhooksProcessor);
+  });
 
-    processor = module.get<WebhooksProcessor>(WebhooksProcessor);
+  afterEach(() => jest.clearAllMocks());
 
-    // Mock global fetch
-    global.fetch = jest.fn().mockResolvedValue({
+  it('delivers on 2xx with a timestamped HMAC signature', async () => {
+    mockedSafeFetch.mockResolvedValue({
       ok: true,
       status: 200,
-    });
+      body: null,
+    } as unknown as Response);
+
+    const result = await processor.process(makeJob({}));
+
+    expect(result).toEqual({ status: 200 });
+    const [, init] = mockedSafeFetch.mock.calls[0];
+    const headers = (init as any).headers;
+    expect(headers['x-feeder-timestamp']).toMatch(/^\d+$/);
+    expect(headers['x-feeder-signature']).toMatch(/^t=\d+,v1=[a-f0-9]{64}$/);
   });
 
-  afterEach(() => {
-    jest.restoreAllMocks();
+  it('throws on a non-2xx response so BullMQ retries', async () => {
+    mockedSafeFetch.mockResolvedValue({
+      ok: false,
+      status: 502,
+      body: null,
+    } as unknown as Response);
+
+    await expect(processor.process(makeJob({}))).rejects.toThrow(/502/);
   });
 
-  it('should generate correct HMAC signature based on payload and send fetch request', async () => {
-    // Intention: Verify that the webhook payload is signed with the user's secret to prove authenticity to the receiver.
-    const secret = 'my-secret';
-    const payload = { article: 'Hello' };
-    const targetUrl = 'https://webhook.site/test';
+  it('discards (does not retry) a job blocked by the SSRF guard', async () => {
+    mockedSafeFetch.mockRejectedValue(new SsrfBlockedError('blocked address'));
 
-    const job = {
-      data: { targetUrl, secret, payload },
-    } as unknown as Job;
-
-    await processor.process(job);
-
-    const expectedSignature = crypto
-      .createHmac('sha256', secret)
-      .update(JSON.stringify(payload))
-      .digest('hex');
-
-    expect(global.fetch).toHaveBeenCalledWith(
-      targetUrl,
-      expect.objectContaining({
-        method: 'POST',
-        body: JSON.stringify(payload),
-        headers: {
-          'Content-Type': 'application/json',
-          'x-feeder-signature': expectedSignature,
-        },
-      }),
+    const result = await processor.process(
+      makeJob({ targetUrl: 'http://169.254.169.254/' }),
     );
+    expect(result).toEqual(expect.objectContaining({ blocked: true }));
+  });
+
+  it('refuses a job with no signing secret', async () => {
+    await expect(processor.process(makeJob({ secret: '' }))).rejects.toThrow(
+      /signing secret/,
+    );
+    expect(mockedSafeFetch).not.toHaveBeenCalled();
   });
 });

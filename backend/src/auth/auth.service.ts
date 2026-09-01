@@ -1,5 +1,6 @@
 import {
   Injectable,
+  OnModuleDestroy,
   UnauthorizedException,
   BadRequestException,
 } from '@nestjs/common';
@@ -18,12 +19,17 @@ import {
 import { User } from './entities/user.entity';
 import { UserCredential } from './entities/user-credential.entity';
 
+// Pre-computed bcrypt hash of a random string; used to keep response timing
+// roughly constant when the account does not exist / has no password.
+const DUMMY_HASH =
+  '$2b$12$BTcfTcviFAZIFWiSveYs0eJR0FFoNQQxs5Nw2lmLbX97/xIHgwI8G';
+
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleDestroy {
   private redisClient: Redis;
-  private rpName = 'Feeder App';
-  private rpID = 'localhost'; // In production, get this from env
-  private origin = 'http://localhost:4200'; // In production, get this from env
+  private rpName: string;
+  private rpID: string;
+  private origin: string;
 
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
@@ -35,49 +41,59 @@ export class AuthService {
     this.redisClient = new Redis({
       host: this.configService.get<string>('REDIS_HOST', 'localhost'),
       port: this.configService.get<number>('REDIS_PORT', 6379),
+      password: this.configService.get<string>('REDIS_PASSWORD') || undefined,
+      maxRetriesPerRequest: 3,
+      lazyConnect: false,
     });
+    this.rpName = this.configService.get<string>('RP_NAME', 'Feeder App');
+    this.rpID = this.configService.get<string>('RP_ID', 'localhost');
+    this.origin = this.configService.get<string>(
+      'ORIGIN',
+      'http://localhost:4200',
+    );
+  }
+
+  async onModuleDestroy() {
+    await this.redisClient.quit().catch(() => undefined);
+  }
+
+  private normalizeEmail(email: string): string {
+    return (email ?? '').trim().toLowerCase();
   }
 
   async register(email: string, password?: string) {
+    email = this.normalizeEmail(email);
     const existing = await this.userRepository.findOne({ where: { email } });
     if (existing) throw new BadRequestException('User already exists');
 
     const user = new User();
     user.email = email;
     if (password) {
-      user.password = await bcrypt.hash(password, 10);
+      user.password = await bcrypt.hash(password, 12);
     }
     await this.userRepository.save(user);
 
-    const payload = {
-      sub: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-    };
     return {
       message: 'User registered successfully',
-      access_token: this.jwtService.sign(payload),
+      access_token: this.jwtService.sign(this.buildPayload(user)),
     };
   }
 
   async login(email: string, password?: string) {
+    email = this.normalizeEmail(email);
     const user = await this.userRepository.findOne({ where: { email } });
-    if (!user) throw new UnauthorizedException('Invalid credentials');
 
-    if (password && user.password) {
-      const valid = await bcrypt.compare(password, user.password);
-      if (!valid) throw new UnauthorizedException('Invalid credentials');
+    // Always run a bcrypt comparison so timing does not reveal whether the
+    // account exists or has a password set.
+    const hash = user?.password ?? DUMMY_HASH;
+    const passwordMatches = await bcrypt.compare(password ?? '', hash);
+
+    if (!user || !user.password || !password || !passwordMatches) {
+      throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload = {
-      sub: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-    };
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: this.jwtService.sign(this.buildPayload(user)),
     };
   }
 
@@ -85,6 +101,7 @@ export class AuthService {
     email: string,
     action: 'register' | 'authenticate' = 'authenticate',
   ) {
+    email = this.normalizeEmail(email);
     let user = await this.userRepository.findOne({
       where: { email },
       relations: { credentials: true },
@@ -92,7 +109,6 @@ export class AuthService {
     let options;
 
     if (!user || action === 'register') {
-      // Happy Path Registration or Add Passkey to existing user
       if (!user) {
         user = new User();
         user.email = email;
@@ -106,22 +122,20 @@ export class AuthService {
         attestationType: 'none',
         authenticatorSelection: {
           residentKey: 'preferred',
-          userVerification: 'preferred',
+          userVerification: 'required',
         },
       });
     } else {
-      // Authentication (or adding a passkey if they don't have one? For simplicity, assume auth if user exists)
       options = await generateAuthenticationOptions({
         rpID: this.rpID,
         allowCredentials:
           user.credentials?.map((cred) => ({
             id: cred.credentialID,
           })) || [],
-        userVerification: 'preferred',
+        userVerification: 'required',
       });
     }
 
-    // Save challenge in Redis for 5 minutes
     await this.redisClient.set(
       `webauthn_challenge:${email}`,
       options.challenge,
@@ -132,29 +146,31 @@ export class AuthService {
   }
 
   async verifyPasskey(email: string, clientResponse: any) {
+    email = this.normalizeEmail(email);
     const user = await this.userRepository.findOne({
       where: { email },
       relations: { credentials: true },
     });
     if (!user) throw new UnauthorizedException('User not found');
 
-    const expectedChallenge = await this.redisClient.get(
-      `webauthn_challenge:${email}`,
-    );
+    const challengeKey = `webauthn_challenge:${email}`;
+    const expectedChallenge = await this.redisClient.get(challengeKey);
     if (!expectedChallenge)
       throw new BadRequestException('Challenge expired or not found');
 
+    // A challenge is single-use: consume it now, regardless of the outcome,
+    // so a failed attempt cannot be replayed within the TTL.
+    await this.redisClient.del(challengeKey);
+
     let verification;
 
-    // Check if response is for registration or authentication by checking for 'attestationObject'
-    // This is a simplified check for the Happy Path
     if (clientResponse.response && clientResponse.response.attestationObject) {
-      // Registration
       verification = await verifyRegistrationResponse({
         response: clientResponse,
         expectedChallenge,
         expectedOrigin: this.origin,
         expectedRPID: this.rpID,
+        requireUserVerification: true,
       });
 
       if (verification.verified && verification.registrationInfo) {
@@ -167,7 +183,6 @@ export class AuthService {
         await this.credentialRepository.save(newCred);
       }
     } else {
-      // Authentication
       const credential = user.credentials?.find(
         (c) => c.credentialID === clientResponse.id,
       );
@@ -178,6 +193,7 @@ export class AuthService {
         expectedChallenge,
         expectedOrigin: this.origin,
         expectedRPID: this.rpID,
+        requireUserVerification: true,
         credential: {
           id: credential.credentialID,
           publicKey: new Uint8Array(credential.credentialPublicKey),
@@ -192,14 +208,7 @@ export class AuthService {
     }
 
     if (verification.verified) {
-      await this.redisClient.del(`webauthn_challenge:${email}`);
-      const payload = {
-        sub: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-      };
-      return { access_token: this.jwtService.sign(payload) };
+      return { access_token: this.jwtService.sign(this.buildPayload(user)) };
     }
 
     throw new UnauthorizedException('Verification failed');
@@ -210,23 +219,31 @@ export class AuthService {
     if (!user) throw new BadRequestException('User not found');
 
     if (name !== undefined) user.name = name;
-    if (email !== undefined && email !== user.email) {
-      const exists = await this.userRepository.findOne({ where: { email } });
-      if (exists) throw new BadRequestException('Email already in use');
-      user.email = email;
+    if (email !== undefined) {
+      const normalized = this.normalizeEmail(email);
+      if (normalized !== user.email) {
+        const exists = await this.userRepository.findOne({
+          where: { email: normalized },
+        });
+        if (exists) throw new BadRequestException('Email already in use');
+        user.email = normalized;
+      }
     }
 
     await this.userRepository.save(user);
 
-    const payload = {
+    return {
+      message: 'Profile updated successfully',
+      access_token: this.jwtService.sign(this.buildPayload(user)),
+    };
+  }
+
+  private buildPayload(user: User) {
+    return {
       sub: user.id,
       email: user.email,
       name: user.name,
       role: user.role,
-    };
-    return {
-      message: 'Profile updated successfully',
-      access_token: this.jwtService.sign(payload),
     };
   }
 }

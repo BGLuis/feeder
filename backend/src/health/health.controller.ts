@@ -3,6 +3,7 @@ import { AppConfigService } from '@config/app-config.service';
 import { Controller, Get, Inject } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
 import { ApiTags } from '@nestjs/swagger';
+import { Public } from '../auth/public.decorator';
 import {
   DiskHealthIndicator,
   HealthCheck,
@@ -20,6 +21,7 @@ import {
   ApiDocsStartup,
 } from './swagger/health.swagger';
 
+@Public()
 @ApiTags('Health')
 @Controller('health')
 export class HealthController {
