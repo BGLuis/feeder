@@ -1,8 +1,10 @@
 {
   "NAV": {
-    "DASHBOARD": "Panel",
-    "DISCOVER": "Descubrir",
+    "DASHBOARD": "Visión General",
+    "TIMELINE": "Línea de Tiempo",
+    "DISCOVER": "Añadir feed",
     "SETTINGS": "Ajustes",
+    "ADMIN": "Administración",
     "LOGIN": "Iniciar sesión",
     "REGISTER": "Registrarse",
     "LOGOUT": "Cerrar sesión"
@@ -13,7 +15,12 @@
     "DELETE": "Eliminar",
     "EDIT": "Editar",
     "LOADING": "Cargando...",
-    "LANGUAGE": "Idioma"
+    "LANGUAGE": "Idioma",
+    "SEARCH": "Buscar...",
+    "REFRESH": "Actualizar",
+    "SYNC_NOW": "Sincronizar ahora",
+    "HEALTHY": "Saludable",
+    "ERROR": "Error"
   },
   "SETTINGS": {
     "PREFERENCES_TITLE": "Preferencias de la aplicación",

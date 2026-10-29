@@ -1,27 +1,41 @@
 import { Component, input, computed } from '@angular/core';
 
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+export type ButtonSize = 'sm' | 'md' | 'lg';
+
+const BASE =
+  'inline-flex items-center justify-center gap-2 rounded-full font-medium press focus-visible:outline-none focus-visible:shadow-focus-ring disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none';
+
+const VARIANTS: Record<ButtonVariant, string> = {
+  primary: 'bg-bg-inverse text-text-inverse hover:bg-bg-inverse-hover',
+  secondary: 'bg-bg-surface text-text-primary border border-border-default hover:bg-bg-muted',
+  ghost: 'bg-transparent text-text-secondary hover:bg-bg-muted hover:text-text-primary',
+  danger: 'bg-bg-danger text-white hover:opacity-90 focus-visible:shadow-focus-ring-danger',
+};
+
+const SIZES: Record<ButtonSize, string> = {
+  sm: 'h-8 px-3 text-sm',
+  md: 'h-10 px-4 text-sm',
+  lg: 'h-12 px-6 text-base',
+};
+
 @Component({
   selector: 'app-button',
   standalone: true,
   template: `
-    <button [class]="computedClasses()" [disabled]="disabled()">
+    <button [type]="type()" [class]="computedClasses()" [disabled]="disabled()">
       <ng-content></ng-content>
     </button>
   `,
 })
 export class ButtonComponent {
-  variant = input<'primary' | 'secondary'>('primary');
+  variant = input<ButtonVariant>('primary');
+  size = input<ButtonSize>('md');
   disabled = input<boolean>(false);
+  type = input<'button' | 'submit' | 'reset'>('button');
   customClass = input<string>('');
 
-  computedClasses = computed(() => {
-    const base =
-      'inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-all duration-200 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 shadow-sm';
-    const variant = this.variant();
-    const primary =
-      'bg-zinc-900 text-white hover:bg-zinc-800 focus:ring-zinc-500 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200';
-    const secondary =
-      'bg-white text-zinc-700 border border-zinc-300 hover:bg-zinc-50 focus:ring-zinc-400 dark:bg-zinc-900 dark:text-zinc-200 dark:border-zinc-700 dark:hover:bg-zinc-800';
-    return `${base} ${variant === 'primary' ? primary : secondary} ${this.customClass()}`;
-  });
+  computedClasses = computed(
+    () => `${BASE} ${VARIANTS[this.variant()]} ${SIZES[this.size()]} ${this.customClass()}`,
+  );
 }

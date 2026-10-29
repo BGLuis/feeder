@@ -5,7 +5,7 @@ module.exports = {
     "./src/**/*.{html,ts}",
   ],
   theme: {
-    extend: {},
+    extend: require('./tailwind.tokens.cjs'),
   },
   plugins: [],
 }

@@ -2,97 +2,86 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FeedsService } from '../core/services/feeds.service';
 import { ToastService } from '../core/services/toast.service';
-import { MainLayoutComponent } from '../ui/templates/main-layout.component';
 import { Router } from '@angular/router';
-import { CodeEditorComponent, CodeTemplate } from '../ui/code-editor.component';
+import { LucideArrowRight } from '@lucide/angular';
+import { CodeEditorComponent, CodeTemplate } from '../ui/atoms/code-editor.component';
+import { PageHeaderComponent } from '../ui/molecules/page-header.component';
+import { SettingRowComponent } from '../ui/molecules/setting-row.component';
+import { AlertComponent } from '../ui/molecules/alert.component';
+import { ButtonComponent } from '../ui/atoms/button.component';
+import { TagComponent } from '../ui/atoms/tag.component';
+import { ToggleComponent } from '../ui/atoms/toggle.component';
 
 @Component({
   selector: 'app-discover',
   standalone: true,
-  imports: [MainLayoutComponent, ReactiveFormsModule, CodeEditorComponent],
+  imports: [
+    ReactiveFormsModule,
+    LucideArrowRight,
+    CodeEditorComponent,
+    PageHeaderComponent,
+    SettingRowComponent,
+    AlertComponent,
+    ButtonComponent,
+    TagComponent,
+    ToggleComponent,
+  ],
   template: `
-    <app-main-layout>
-      <div class="max-w-3xl mx-auto py-8">
-        <header class="mb-10">
-          <h1 class="text-4xl tracking-tight font-medium text-zinc-900 dark:text-zinc-50 mb-3">
-            Add new feed
-          </h1>
-          <p class="text-zinc-600 dark:text-zinc-400 text-lg leading-relaxed max-w-[65ch]">
-            Subscribe to a new RSS feed or Webhook. All data is processed privately.
-          </p>
-        </header>
+    <div class="max-w-3xl mx-auto">
+        <app-page-header
+          title="Add new feed"
+          subtitle="Subscribe to a new RSS feed or Webhook. All data is processed privately."
+        ></app-page-header>
 
         <div
-          class="bg-white dark:bg-[#121212] rounded-[2rem] shadow-sm border border-zinc-200 dark:border-zinc-800/50 p-8 md:p-10"
+          class="bg-bg-surface rounded-2xl shadow-elevation-1 border border-border-default p-6 sm:p-8 md:p-10"
         >
-          <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-8">
-            <div class="flex flex-col gap-3">
-              <label class="text-sm font-medium text-zinc-800 dark:text-zinc-200" for="url"
-                >Feed URL</label
-              >
+          <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-6">
+            <!-- Feed URL -->
+            <div class="flex flex-col gap-1.5">
+              <label class="text-label text-text-primary" for="url">
+                Feed URL
+              </label>
               <input
                 id="url"
                 type="url"
                 formControlName="url"
                 placeholder="https://example.com/feed.xml"
-                class="px-4 py-3.5 bg-zinc-50 dark:bg-[#0a0a0a] border border-zinc-200 dark:border-zinc-800/50 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/50 transition-all text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-600"
+                class="w-full h-11 px-3.5 bg-bg-field border border-border-default rounded-lg text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-border-focus focus:shadow-focus-ring transition-colors text-sm font-mono"
               />
             </div>
 
-            <div class="flex flex-col gap-3">
-              <label class="text-sm font-medium text-zinc-800 dark:text-zinc-200" for="name"
-                >Feed Name <span class="text-zinc-500 font-normal ml-1">(Optional)</span></label
-              >
+            <!-- Feed Name -->
+            <div class="flex flex-col gap-1.5">
+              <label class="text-label text-text-primary" for="name">
+                Feed Name
+                <span class="text-text-tertiary font-normal text-xs ml-1">(Optional)</span>
+              </label>
               <input
                 id="name"
                 type="text"
                 formControlName="name"
                 placeholder="My Tech Blog"
-                class="px-4 py-3.5 bg-zinc-50 dark:bg-[#0a0a0a] border border-zinc-200 dark:border-zinc-800/50 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/50 transition-all text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-600"
+                class="w-full h-11 px-3.5 bg-bg-field border border-border-default rounded-lg text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-border-focus focus:shadow-focus-ring transition-colors text-sm"
               />
             </div>
 
-            <div class="flex flex-col gap-3">
-              <label class="text-sm font-medium text-zinc-800 dark:text-zinc-200"
-                >Tags
-                <span class="text-zinc-500 font-normal ml-1">(Press Enter or Comma)</span></label
-              >
+            <!-- Tags -->
+            <div class="flex flex-col gap-1.5">
+              <label class="text-label text-text-primary">
+                Tags
+                <span class="text-text-tertiary font-normal text-xs ml-1">(Press Enter or Comma)</span>
+              </label>
               <div
-                class="flex flex-wrap items-center gap-2 p-2 bg-zinc-50 dark:bg-[#0a0a0a] border border-zinc-200 dark:border-zinc-800/50 rounded-2xl focus-within:ring-4 focus-within:ring-emerald-500/10 focus-within:border-emerald-500/50 transition-all min-h-[56px] text-zinc-900 dark:text-zinc-100"
+                class="flex flex-wrap items-center gap-2 p-2 bg-bg-field border border-border-default rounded-lg focus-within:border-border-focus focus-within:shadow-focus-ring transition-colors min-h-[48px]"
               >
                 @for (tag of currentTags(); track tag) {
-                  <span
-                    class="inline-flex items-center gap-1 px-3 py-1 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-full text-sm font-medium"
-                  >
-                    <svg
-                      class="w-3.5 h-3.5 text-zinc-500"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-                      />
-                    </svg>
-                    {{ tag }}
-                    <button
-                      type="button"
-                      (click)="removeTag(tag)"
-                      class="text-zinc-500 hover:text-zinc-900 dark:text-white transition-colors ml-1 p-0.5 focus:outline-none"
-                    >
-                      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    </button>
-                  </span>
+                  <app-tag
+                    [label]="tag"
+                    tone="accent"
+                    [removable]="true"
+                    (remove)="removeTag(tag)"
+                  ></app-tag>
                 }
                 <input
                   type="text"
@@ -105,44 +94,31 @@ import { CodeEditorComponent, CodeTemplate } from '../ui/code-editor.component';
                   "
                   (blur)="addTag(tagInput.value); tagInput.value = ''"
                   placeholder="tech, youtube, news..."
-                  class="flex-1 min-w-[140px] bg-transparent border-none focus:outline-none focus:ring-0 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-600 px-2 py-1.5"
+                  class="flex-1 min-w-[140px] bg-transparent border-none focus:outline-none text-text-primary placeholder:text-text-tertiary text-sm px-2 py-1"
                 />
               </div>
             </div>
 
-            <div
-              class="flex items-center justify-between py-6 border-y border-zinc-200 dark:border-zinc-800/50"
+            <!-- Private Feed Setting -->
+            <app-setting-row
+              title="Private Feed"
+              description="Requires authentication or contains sensitive data"
             >
-              <div class="flex flex-col gap-1">
-                <label
-                  class="text-base font-medium text-zinc-800 dark:text-zinc-200"
-                  for="isPrivate"
-                  >Private Feed</label
-                >
-                <span class="text-sm text-zinc-500"
-                  >Requires authentication or contains sensitive data</span
-                >
-              </div>
-              <label class="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  formControlName="isPrivate"
-                  id="isPrivate"
-                  class="sr-only peer"
-                />
-                <div
-                  class="w-11 h-6 bg-zinc-200 dark:bg-zinc-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 border border-zinc-300 dark:border-zinc-700 peer-checked:border-emerald-500"
-                ></div>
-              </label>
-            </div>
+              <app-toggle
+                [checked]="form.get('isPrivate')?.value || false"
+                label="Toggle private feed"
+                (checkedChange)="form.patchValue({ isPrivate: $event })"
+              ></app-toggle>
+            </app-setting-row>
 
-            <div class="flex flex-col gap-3">
-              <label class="text-sm font-medium text-zinc-800 dark:text-zinc-200" for="selectors"
-                >Advanced Selectors
-                <span class="text-zinc-500 font-normal ml-1">(JSON)</span></label
-              >
+            <!-- Advanced Selectors -->
+            <div class="flex flex-col gap-1.5">
+              <label class="text-label text-text-primary" for="selectors">
+                Advanced Selectors
+                <span class="text-text-tertiary font-normal text-xs ml-1">(JSON)</span>
+              </label>
               <app-code-editor
-                title="Seletores HTML"
+                title="HTML Selectors"
                 language="json"
                 height="200px"
                 [code]="form.get('selectors')?.value || ''"
@@ -151,55 +127,31 @@ import { CodeEditorComponent, CodeTemplate } from '../ui/code-editor.component';
               ></app-code-editor>
             </div>
 
+            @if (error()) {
+              <app-alert tone="danger" [description]="error()!"></app-alert>
+            }
+
             <div class="pt-2 flex justify-end">
-              <button
-                type="submit"
+              <app-button
+                (click)="onSubmit()"
                 [disabled]="form.invalid || loading()"
-                class="bg-zinc-100 hover:bg-white text-zinc-950 px-8 py-3.5 rounded-full font-medium transition-all focus:outline-none focus:ring-4 focus:ring-zinc-100/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 text-sm shadow-sm"
+                variant="primary"
+                size="lg"
               >
                 @if (loading()) {
                   <span
-                    class="inline-block w-4 h-4 border-2 border-zinc-900/30 border-t-zinc-950 rounded-full animate-spin"
+                    class="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-1.5"
                   ></span>
                   Subscribing...
                 } @else {
-                  Subscribe Feed
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M14 5l7 7m0 0l-7 7m7-7H3"
-                    />
-                  </svg>
+                  <span>Subscribe Feed</span>
+                  <svg lucideArrowRight class="w-4 h-4"></svg>
                 }
-              </button>
+              </app-button>
             </div>
-
-            @if (error()) {
-              <div
-                class="p-4 bg-red-950/30 text-red-400 rounded-2xl text-sm border border-red-900/50 flex items-start gap-3"
-              >
-                <svg
-                  class="w-5 h-5 flex-shrink-0 mt-0.5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                <span>{{ error() }}</span>
-              </div>
-            }
           </form>
         </div>
       </div>
-    </app-main-layout>
   `,
 })
 export class DiscoverComponent {

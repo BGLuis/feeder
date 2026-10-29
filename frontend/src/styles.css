@@ -1,8 +1,22 @@
+@import '@fontsource-variable/geist';
+@import '@fontsource-variable/geist-mono';
+@import '@fontsource/newsreader/400.css';
+@import '@fontsource/newsreader/500.css';
+@import './tokens.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  body {
+    @apply bg-bg-canvas font-sans text-text-primary;
+  }
+
+  a {
+    transition: color var(--duration-base) var(--easing-standard);
+  }
+
   /* Motion budget: honour the OS "reduce motion" setting everywhere. */
   @media (prefers-reduced-motion: reduce) {
     *,
@@ -13,14 +27,18 @@
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
     }
+
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+      animation: none !important;
+    }
   }
 
-  /* Coherent focus ring — mirrors the emerald ring the inputs already use. */
+
   :where(a, button, [role='button'], summary, [tabindex]):focus-visible {
     outline: none;
-    box-shadow:
-      0 0 0 2px rgb(9 9 11),
-      0 0 0 4px rgb(16 185 129 / 0.5);
+    box-shadow: var(--shadow-focus-ring);
     border-radius: 0.5rem;
   }
 }
@@ -29,20 +47,20 @@
   /* Physical click feedback for any interactive element. */
   .press {
     transition:
-      transform 120ms ease-out,
-      background-color 200ms,
-      color 200ms,
-      box-shadow 200ms;
+      transform var(--duration-fast) var(--easing-standard),
+      background-color var(--duration-base) var(--easing-standard),
+      color var(--duration-base) var(--easing-standard),
+      box-shadow var(--duration-base) var(--easing-standard);
   }
   .press:active {
-    transform: scale(0.97);
+    transform: scale(var(--scale-press));
   }
 
   /* Skeleton placeholder that takes the shape of the content it replaces. */
   .skeleton {
     position: relative;
     overflow: hidden;
-    background-color: rgb(24 24 27);
+    background-color: var(--color-bg-skeleton);
   }
   .skeleton::after {
     content: '';
@@ -55,7 +73,7 @@
       rgb(255 255 255 / 0.06) 50%,
       transparent 100%
     );
-    animation: skeleton-shimmer 1.4s ease-in-out infinite;
+    animation: skeleton-shimmer var(--duration-shimmer) ease-in-out infinite;
   }
   @keyframes skeleton-shimmer {
     to {
@@ -68,8 +86,8 @@
     opacity: 0;
     filter: blur(8px);
     transition:
-      opacity 220ms ease-out,
-      filter 220ms ease-out;
+      opacity var(--duration-moderate) var(--easing-standard),
+      filter var(--duration-moderate) var(--easing-standard);
   }
   .media-fade.is-loaded {
     opacity: 1;
@@ -78,13 +96,77 @@
 
   /* Staggered list entrance — set --i on each row. */
   .rise-in {
-    animation: rise-in 260ms ease-out backwards;
-    animation-delay: calc(var(--i, 0) * 40ms);
+    animation: rise-in var(--duration-moderate) var(--easing-enter) backwards;
+    animation-delay: calc(var(--i, 0) * var(--duration-stagger));
   }
   @keyframes rise-in {
     from {
       opacity: 0;
       transform: translateY(6px);
+    }
+  }
+
+  /* Sync rotation animation - 800ms linear loop */
+  .animate-spin-sync {
+    animation: spin 800ms linear infinite;
+  }
+
+  /* Modal motion - duration-slow (400ms) with easing-enter */
+  .modal-scrim-enter {
+    animation: modal-scrim-in var(--duration-slow) var(--easing-enter) forwards;
+  }
+  @keyframes modal-scrim-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .modal-panel-enter {
+    animation: modal-panel-in var(--duration-slow) var(--easing-enter) forwards;
+  }
+  @keyframes modal-panel-in {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* SPA View Transitions - scoped exclusively to main page content */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+
+  ::view-transition-old(page-content) {
+    animation: fade-out var(--duration-fast) var(--easing-exit) forwards;
+  }
+
+  ::view-transition-new(page-content) {
+    animation: fade-in var(--duration-base) var(--easing-enter) forwards;
+  }
+
+  @keyframes fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
     }
   }
 
@@ -99,13 +181,13 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background-color: #3f3f46; /* Cor zinc-700 para manter a suavidade no dark mode */
+    background-color: var(--color-border-strong);
     border-radius: 9999px;
-    border: 3px solid #121212; /* Borda da mesma cor do fundo para dar efeito de 'floating' */
+    border: 3px solid var(--color-bg-canvas);
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background-color: #71717a; /* Cor mais clara (zinc-500) ao passar o mouse */
+    background-color: var(--color-text-tertiary);
   }
 
   /* Classe específica para scrollbars mais finas (ex: modal) */
