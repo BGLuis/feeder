@@ -1,7 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { MainLayoutComponent } from '../ui/templates/main-layout.component';
 import { AuthService } from '../core/auth.service';
 import { CodeEditorComponent, CodeTemplate } from '../ui/atoms/code-editor.component';
 import { WebhooksConfigComponent } from './webhooks-config.component';
@@ -28,7 +27,6 @@ import {
   selector: 'app-settings',
   standalone: true,
   imports: [
-    MainLayoutComponent,
     ReactiveFormsModule,
     RouterLink,
     CodeEditorComponent,
@@ -50,8 +48,7 @@ import {
     LucideArrowRight,
   ],
   template: `
-    <app-main-layout>
-      <div class="max-w-[800px] mx-auto">
+    <div class="max-w-[800px] mx-auto">
         <app-page-header
           title="User Settings"
           subtitle="Manage your account preferences, security, and authentication methods."
@@ -253,7 +250,6 @@ import {
           </section>
         </div>
       </div>
-    </app-main-layout>
   `,
 })
 export class SettingsComponent {

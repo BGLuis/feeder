@@ -7,7 +7,6 @@ import {
   ViewChild,
   ElementRef,
 } from '@angular/core';
-import { MainLayoutComponent } from '../ui/templates/main-layout.component';
 import { FeedsService, FeedSubscription } from '../core/services/feeds.service';
 import { ToastService } from '../core/services/toast.service';
 import { RouterLink } from '@angular/router';
@@ -28,7 +27,6 @@ import { CodeEditorComponent, CodeTemplate } from '../ui/atoms/code-editor.compo
   selector: 'app-dashboard',
   standalone: true,
   imports: [
-    MainLayoutComponent,
     RouterLink,
     LucidePlus,
     PageHeaderComponent,
@@ -44,8 +42,7 @@ import { CodeEditorComponent, CodeTemplate } from '../ui/atoms/code-editor.compo
     CodeEditorComponent,
   ],
   template: `
-    <app-main-layout>
-      <div class="max-w-6xl mx-auto">
+    <div class="max-w-6xl mx-auto">
         <!-- Page Header -->
         <app-page-header
           title="Overview"
@@ -280,7 +277,6 @@ import { CodeEditorComponent, CodeTemplate } from '../ui/atoms/code-editor.compo
           </app-button>
         </div>
       </app-modal>
-    </app-main-layout>
   `,
 })
 export class DashboardComponent implements OnInit {

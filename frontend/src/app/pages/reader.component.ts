@@ -10,7 +10,6 @@ import {
   type WritableSignal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MainLayoutComponent } from '../ui/templates/main-layout.component';
 import { FeedsService } from '../core/services/feeds.service';
 import { ToastService } from '../core/services/toast.service';
 import { Subject, Subscription } from 'rxjs';
@@ -42,7 +41,6 @@ const LOCAL_CAP = 1000;
   selector: 'app-reader',
   standalone: true,
   imports: [
-    MainLayoutComponent,
     CommonModule,
     LucideRefreshCw,
     PageHeaderComponent,
@@ -55,8 +53,7 @@ const LOCAL_CAP = 1000;
     ButtonComponent,
   ],
   template: `
-    <app-main-layout>
-      <div class="max-w-[768px] mx-auto">
+    <div class="max-w-[768px] mx-auto">
         <!-- Page Header -->
         <app-page-header
           title="Timeline"
@@ -221,7 +218,6 @@ const LOCAL_CAP = 1000;
           </div>
         }
       </div>
-    </app-main-layout>
   `,
 })
 export class ReaderComponent implements OnInit, OnDestroy {

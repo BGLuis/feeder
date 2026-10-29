@@ -1,5 +1,4 @@
 import { Component, signal } from '@angular/core';
-import { MainLayoutComponent } from '../ui/templates/main-layout.component';
 import { PageHeaderComponent } from '../ui/molecules/page-header.component';
 import { ButtonComponent } from '../ui/atoms/button.component';
 import { BadgeComponent } from '../ui/atoms/badge.component';
@@ -14,7 +13,6 @@ import {
   selector: 'app-admin',
   standalone: true,
   imports: [
-    MainLayoutComponent,
     PageHeaderComponent,
     ButtonComponent,
     BadgeComponent,
@@ -24,8 +22,7 @@ import {
     LucideRefreshCw,
   ],
   template: `
-    <app-main-layout>
-      <div class="max-w-4xl mx-auto">
+    <div class="max-w-4xl mx-auto">
         <app-page-header
           title="System Administration"
           subtitle="Monitor backend services, queue health, and perform maintenance tasks."
@@ -126,7 +123,6 @@ import {
           </div>
         </div>
       </div>
-    </app-main-layout>
   `,
 })
 export class AdminComponent {

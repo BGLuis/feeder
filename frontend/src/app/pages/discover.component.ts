@@ -2,7 +2,6 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FeedsService } from '../core/services/feeds.service';
 import { ToastService } from '../core/services/toast.service';
-import { MainLayoutComponent } from '../ui/templates/main-layout.component';
 import { Router } from '@angular/router';
 import { LucideArrowRight } from '@lucide/angular';
 import { CodeEditorComponent, CodeTemplate } from '../ui/atoms/code-editor.component';
@@ -17,7 +16,6 @@ import { ToggleComponent } from '../ui/atoms/toggle.component';
   selector: 'app-discover',
   standalone: true,
   imports: [
-    MainLayoutComponent,
     ReactiveFormsModule,
     LucideArrowRight,
     CodeEditorComponent,
@@ -29,8 +27,7 @@ import { ToggleComponent } from '../ui/atoms/toggle.component';
     ToggleComponent,
   ],
   template: `
-    <app-main-layout>
-      <div class="max-w-3xl mx-auto">
+    <div class="max-w-3xl mx-auto">
         <app-page-header
           title="Add new feed"
           subtitle="Subscribe to a new RSS feed or Webhook. All data is processed privately."
@@ -155,7 +152,6 @@ import { ToggleComponent } from '../ui/atoms/toggle.component';
           </form>
         </div>
       </div>
-    </app-main-layout>
   `,
 })
 export class DiscoverComponent {
