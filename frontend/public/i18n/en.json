@@ -1,8 +1,10 @@
 {
   "NAV": {
-    "DASHBOARD": "Dashboard",
-    "DISCOVER": "Discover",
+    "DASHBOARD": "Overview",
+    "TIMELINE": "Timeline",
+    "DISCOVER": "Add feed",
     "SETTINGS": "Settings",
+    "ADMIN": "System Admin",
     "LOGIN": "Login",
     "REGISTER": "Register",
     "LOGOUT": "Logout"
@@ -13,7 +15,12 @@
     "DELETE": "Delete",
     "EDIT": "Edit",
     "LOADING": "Loading...",
-    "LANGUAGE": "Language"
+    "LANGUAGE": "Language",
+    "SEARCH": "Search...",
+    "REFRESH": "Refresh",
+    "SYNC_NOW": "Sync now",
+    "HEALTHY": "Healthy",
+    "ERROR": "Error"
   },
   "SETTINGS": {
     "PREFERENCES_TITLE": "App Preferences",

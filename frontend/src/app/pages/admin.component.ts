@@ -1,100 +1,141 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { MainLayoutComponent } from '../ui/templates/main-layout.component';
+import { PageHeaderComponent } from '../ui/molecules/page-header.component';
+import { ButtonComponent } from '../ui/atoms/button.component';
+import { BadgeComponent } from '../ui/atoms/badge.component';
+import {
+  LucideDatabase,
+  LucideServer,
+  LucideCpu,
+  LucideRefreshCw,
+} from '@lucide/angular';
 
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [MainLayoutComponent],
+  imports: [
+    MainLayoutComponent,
+    PageHeaderComponent,
+    ButtonComponent,
+    BadgeComponent,
+    LucideDatabase,
+    LucideServer,
+    LucideCpu,
+    LucideRefreshCw,
+  ],
   template: `
     <app-main-layout>
-      <div class="max-w-4xl mx-auto py-8">
-        <header class="mb-10">
-          <h1 class="text-4xl tracking-tight font-medium text-zinc-900 dark:text-zinc-50 mb-3">System Administration</h1>
-          <p class="text-zinc-600 dark:text-zinc-400 text-lg leading-relaxed max-w-[65ch]">Monitor backend services, queue health, and perform maintenance tasks.</p>
-        </header>
+      <div class="max-w-4xl mx-auto">
+        <app-page-header
+          title="System Administration"
+          subtitle="Monitor backend services, queue health, and perform maintenance tasks."
+        ></app-page-header>
 
+        <!-- Service status cards -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <!-- MySQL Status -->
-          <div class="bg-white dark:bg-[#121212] rounded-3xl border border-zinc-200 dark:border-zinc-800/50 p-6 flex flex-col relative overflow-hidden">
-            <div class="absolute top-0 right-0 p-6">
-              <span class="flex h-3 w-3 relative">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-              </span>
+          <div
+            class="bg-bg-surface rounded-2xl border border-border-default p-6 flex flex-col justify-between shadow-elevation-1 relative"
+          >
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <div
+                  class="w-11 h-11 rounded-xl bg-bg-muted flex items-center justify-center text-icon-secondary"
+                >
+                  <svg lucideDatabase class="w-5 h-5"></svg>
+                </div>
+                <app-badge label="Connected" tone="accent" [dot]="true"></app-badge>
+              </div>
+              <h3 class="text-heading-h3 font-medium text-text-primary">Database</h3>
+              <p class="text-text-secondary text-xs mt-1">MySQL TypeORM</p>
             </div>
-            <div class="w-12 h-12 rounded-2xl bg-zinc-200/50 dark:bg-zinc-800/50 flex items-center justify-center text-zinc-600 dark:text-zinc-400 mb-4">
-              <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
-              </svg>
-            </div>
-            <h3 class="text-lg font-medium text-zinc-900 dark:text-zinc-100">Database</h3>
-            <p class="text-zinc-500 text-sm mt-1">MySQL TypeORM</p>
-            <div class="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800/50">
-              <p class="text-emerald-400 text-sm font-medium">Connected</p>
+            <div class="mt-6 pt-4 border-t border-border-subtle flex items-center justify-between text-xs text-text-tertiary">
+              <span>Latency</span>
+              <span class="font-mono text-text-primary font-medium">1.2ms</span>
             </div>
           </div>
 
           <!-- Redis Status -->
-          <div class="bg-white dark:bg-[#121212] rounded-3xl border border-zinc-200 dark:border-zinc-800/50 p-6 flex flex-col relative overflow-hidden">
-            <div class="absolute top-0 right-0 p-6">
-              <span class="flex h-3 w-3 relative">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-              </span>
+          <div
+            class="bg-bg-surface rounded-2xl border border-border-default p-6 flex flex-col justify-between shadow-elevation-1 relative"
+          >
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <div
+                  class="w-11 h-11 rounded-xl bg-bg-muted flex items-center justify-center text-icon-secondary"
+                >
+                  <svg lucideServer class="w-5 h-5"></svg>
+                </div>
+                <app-badge label="Connected" tone="accent" [dot]="true"></app-badge>
+              </div>
+              <h3 class="text-heading-h3 font-medium text-text-primary">Redis Cache</h3>
+              <p class="text-text-secondary text-xs mt-1">BullMQ Storage</p>
             </div>
-            <div class="w-12 h-12 rounded-2xl bg-zinc-200/50 dark:bg-zinc-800/50 flex items-center justify-center text-zinc-600 dark:text-zinc-400 mb-4">
-              <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-            </div>
-            <h3 class="text-lg font-medium text-zinc-900 dark:text-zinc-100">Redis Cache</h3>
-            <p class="text-zinc-500 text-sm mt-1">BullMQ Storage</p>
-            <div class="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800/50">
-              <p class="text-emerald-400 text-sm font-medium">Connected</p>
+            <div class="mt-6 pt-4 border-t border-border-subtle flex items-center justify-between text-xs text-text-tertiary">
+              <span>Queue Jobs</span>
+              <span class="font-mono text-text-primary font-medium">0 active</span>
             </div>
           </div>
 
           <!-- Worker Status -->
-          <div class="bg-white dark:bg-[#121212] rounded-3xl border border-zinc-200 dark:border-zinc-800/50 p-6 flex flex-col relative overflow-hidden">
-            <div class="absolute top-0 right-0 p-6">
-              <span class="flex h-3 w-3 relative">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-              </span>
+          <div
+            class="bg-bg-surface rounded-2xl border border-border-default p-6 flex flex-col justify-between shadow-elevation-1 relative"
+          >
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <div
+                  class="w-11 h-11 rounded-xl bg-bg-muted flex items-center justify-center text-icon-secondary"
+                >
+                  <svg lucideCpu class="w-5 h-5"></svg>
+                </div>
+                <app-badge label="Idle & Ready" tone="info" [dot]="true"></app-badge>
+              </div>
+              <h3 class="text-heading-h3 font-medium text-text-primary">Scraper Worker</h3>
+              <p class="text-text-secondary text-xs mt-1">Playwright Tasks</p>
             </div>
-            <div class="w-12 h-12 rounded-2xl bg-zinc-200/50 dark:bg-zinc-800/50 flex items-center justify-center text-zinc-600 dark:text-zinc-400 mb-4">
-              <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </div>
-            <h3 class="text-lg font-medium text-zinc-900 dark:text-zinc-100">Scraper Worker</h3>
-            <p class="text-zinc-500 text-sm mt-1">Playwright Tasks</p>
-            <div class="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-800/50">
-              <p class="text-emerald-400 text-sm font-medium">Idle & Ready</p>
+            <div class="mt-6 pt-4 border-t border-border-subtle flex items-center justify-between text-xs text-text-tertiary">
+              <span>Concurrency</span>
+              <span class="font-mono text-text-primary font-medium">4 workers</span>
             </div>
           </div>
         </div>
 
-        <div class="bg-white dark:bg-[#121212] rounded-[2rem] shadow-sm border border-zinc-200 dark:border-zinc-800/50 p-8">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
-            <h2 class="text-xl font-medium text-zinc-900 dark:text-zinc-100">System Logs & Queue</h2>
-            <button class="w-full sm:w-auto px-4 py-2 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 rounded-full text-sm font-medium transition-colors border border-zinc-300 dark:border-zinc-700">
-              Refresh Logs
-            </button>
+        <!-- Logs & Queue Section -->
+        <div class="bg-bg-surface rounded-2xl shadow-elevation-1 border border-border-default p-6 sm:p-8">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+            <div>
+              <h2 class="text-heading-h2 font-medium text-text-primary">System Logs & Queue</h2>
+              <p class="text-body-sm text-text-secondary mt-0.5">Live operational events stream</p>
+            </div>
+            <app-button (click)="refreshLogs()" variant="secondary" size="md">
+              <svg lucideRefreshCw class="w-4 h-4" [class.animate-spin]="isRefreshing()"></svg>
+              <span>Refresh Logs</span>
+            </app-button>
           </div>
-          
-          <div class="bg-zinc-50 dark:bg-[#0a0a0a] rounded-2xl border border-zinc-200 dark:border-zinc-800/50 p-4 font-mono text-xs text-zinc-600 dark:text-zinc-400 h-64 overflow-y-auto flex flex-col gap-2">
-            <p><span class="text-zinc-600">[10:02:15]</span> <span class="text-emerald-400">INFO</span> BullMQ Queue initialized</p>
-            <p><span class="text-zinc-600">[10:02:16]</span> <span class="text-emerald-400">INFO</span> Connected to Feeder Database successfully</p>
-            <p><span class="text-zinc-600">[10:05:30]</span> <span class="text-emerald-400">INFO</span> ScraperWorker processed job #29 (0 ms)</p>
-            <p><span class="text-zinc-600">[10:15:00]</span> <span class="text-zinc-500">DEBUG</span> Polling sources for new articles...</p>
-            <p class="text-zinc-600 italic mt-auto">Waiting for new logs...</p>
+
+          <!-- Console terminal -->
+          <div
+            class="bg-bg-field rounded-xl border border-border-default p-4 font-mono text-xs text-text-secondary h-64 overflow-x-auto overflow-y-auto flex flex-col gap-2"
+          >
+            <p><span class="text-text-tertiary">[10:02:15]</span> <span class="text-text-accent font-semibold">INFO</span> BullMQ Queue initialized</p>
+            <p><span class="text-text-tertiary">[10:02:16]</span> <span class="text-text-accent font-semibold">INFO</span> Connected to Feeder Database successfully</p>
+            <p><span class="text-text-tertiary">[10:05:30]</span> <span class="text-text-accent font-semibold">INFO</span> ScraperWorker processed job #29 (0 ms)</p>
+            <p><span class="text-text-tertiary">[10:15:00]</span> <span class="text-text-info font-semibold">DEBUG</span> Polling sources for new articles...</p>
+            <p><span class="text-text-tertiary">[10:20:00]</span> <span class="text-text-accent font-semibold">INFO</span> All feeds synchronized smoothly</p>
+            <p class="text-text-tertiary italic mt-auto">Waiting for new events...</p>
           </div>
         </div>
       </div>
     </app-main-layout>
-  `
+  `,
 })
 export class AdminComponent {
+  isRefreshing = signal(false);
+
+  refreshLogs() {
+    this.isRefreshing.set(true);
+    setTimeout(() => {
+      this.isRefreshing.set(false);
+    }, 600);
+  }
 }

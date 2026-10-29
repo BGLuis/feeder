@@ -4,73 +4,105 @@ import { AuthLayoutComponent } from '../ui/templates/auth-layout.component';
 import { LucideFingerprint } from '@lucide/angular';
 import { AuthService } from '../core/auth.service';
 import { FormsModule } from '@angular/forms';
+import { ButtonComponent } from '../ui/atoms/button.component';
+import { AlertComponent } from '../ui/molecules/alert.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [AuthLayoutComponent, LucideFingerprint, FormsModule, RouterLink],
+  imports: [
+    AuthLayoutComponent,
+    LucideFingerprint,
+    FormsModule,
+    RouterLink,
+    ButtonComponent,
+    AlertComponent,
+  ],
   template: `
     <app-auth-layout>
       <div class="w-full max-w-md mx-auto">
-        <div class="bg-white dark:bg-[#121212] rounded-[2rem] shadow-sm border border-zinc-200 dark:border-zinc-800/50 p-8 md:p-10 relative overflow-hidden">
-          <div class="absolute inset-0 bg-gradient-to-br from-zinc-800/10 to-transparent opacity-50"></div>
-          
+        <div
+          class="bg-bg-surface rounded-2xl shadow-elevation-2 border border-border-default p-8 md:p-10 relative overflow-hidden"
+        >
           <div class="relative z-10">
-            <div class="text-center mb-10">
-              <h1 class="text-4xl font-light text-zinc-900 dark:text-zinc-50 tracking-tight">Feeder</h1>
-              <p class="text-zinc-600 dark:text-zinc-400 mt-3 text-sm">Welcome back. Enter your details.</p>
+            <div class="text-center mb-8">
+              <h1 class="text-editorial-headline-l font-serif text-text-primary">
+                Feeder
+              </h1>
+              <p class="text-body text-text-secondary mt-2">
+                Welcome back. Enter your details.
+              </p>
             </div>
 
-            <div class="space-y-6">
-              <div class="space-y-2 text-left">
-                <label class="text-sm font-medium text-zinc-800 dark:text-zinc-200 block">Email</label>
-                <input type="email" placeholder="nome@exemplo.com" [(ngModel)]="email"
-                  class="w-full px-4 py-3.5 bg-zinc-50 dark:bg-[#0a0a0a] border border-zinc-200 dark:border-zinc-800/50 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/50 transition-all text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-600" />
+            <div class="space-y-5">
+              <div class="space-y-1.5 text-left">
+                <label class="text-label text-text-primary block">Email</label>
+                <input
+                  type="email"
+                  placeholder="name@example.com"
+                  [ngModel]="email()"
+                  (ngModelChange)="email.set($event)"
+                  class="w-full h-11 px-3.5 bg-bg-field border border-border-default rounded-lg text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-border-focus focus:shadow-focus-ring transition-colors text-sm"
+                />
               </div>
-              
-              <div class="space-y-2 text-left">
-                <label class="text-sm font-medium text-zinc-800 dark:text-zinc-200 block">Password</label>
-                <input type="password" placeholder="••••••••" [(ngModel)]="password"
-                  class="w-full px-4 py-3.5 bg-zinc-50 dark:bg-[#0a0a0a] border border-zinc-200 dark:border-zinc-800/50 rounded-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/50 transition-all text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-600" />
+
+              <div class="space-y-1.5 text-left">
+                <label class="text-label text-text-primary block">Password</label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  [ngModel]="password()"
+                  (ngModelChange)="password.set($event)"
+                  class="w-full h-11 px-3.5 bg-bg-field border border-border-default rounded-lg text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-border-focus focus:shadow-focus-ring transition-colors text-sm"
+                />
               </div>
 
               @if (errorMessage()) {
-                <div class="p-4 bg-red-950/30 text-red-400 rounded-2xl text-sm border border-red-900/50 flex items-start gap-3">
-                  <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span>{{ errorMessage() }}</span>
-                </div>
+                <app-alert tone="danger" [description]="errorMessage()"></app-alert>
               }
 
               <div class="pt-2">
-                <button (click)="onLogin()"
+                <app-button
+                  (click)="onLogin()"
                   [disabled]="loading()"
-                  class="w-full bg-zinc-100 hover:bg-white text-zinc-950 px-8 py-3.5 rounded-full font-medium transition-all focus:outline-none focus:ring-4 focus:ring-zinc-100/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-sm shadow-sm">
+                  variant="primary"
+                  size="lg"
+                  customClass="w-full"
+                >
                   @if (loading()) {
-                    <span class="inline-block w-4 h-4 border-2 border-zinc-900/30 border-t-zinc-950 rounded-full animate-spin"></span>
+                    <span
+                      class="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
+                    ></span>
                   }
                   Sign In
-                </button>
+                </app-button>
               </div>
             </div>
 
-            <div class="my-8 flex items-center gap-4">
-              <div class="h-px bg-zinc-200/50 dark:bg-zinc-800/50 flex-1"></div>
-              <span class="text-xs text-zinc-600 font-medium uppercase tracking-widest">Or continue with</span>
-              <div class="h-px bg-zinc-200/50 dark:bg-zinc-800/50 flex-1"></div>
+            <div class="my-6 flex items-center gap-4">
+              <div class="h-px bg-border-subtle flex-1"></div>
+              <span class="text-overline uppercase text-text-tertiary font-semibold">Or continue with</span>
+              <div class="h-px bg-border-subtle flex-1"></div>
             </div>
 
-            <button (click)="onLoginWithPasskey()"
+            <app-button
+              (click)="onLoginWithPasskey()"
               [disabled]="loading()"
-              class="w-full bg-zinc-50 dark:bg-[#0a0a0a] border border-zinc-200 dark:border-zinc-800/50 hover:bg-zinc-800/30 text-zinc-700 dark:text-zinc-300 px-8 py-3.5 rounded-full font-medium transition-all focus:outline-none focus:ring-4 focus:ring-emerald-500/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-sm group">
-              <svg lucideFingerprint class="w-5 h-5 text-zinc-500 group-hover:text-emerald-500 transition-colors"></svg>
-              Passkey
-            </button>
+              variant="secondary"
+              size="lg"
+              customClass="w-full"
+            >
+              <svg lucideFingerprint class="w-5 h-5 text-icon-secondary"></svg>
+              <span>Passkey</span>
+            </app-button>
 
-            <p class="text-center text-sm text-zinc-500 mt-8">
-              Don't have an account? 
-              <a routerLink="/register" class="text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:text-white font-medium transition-colors">Sign up</a>
+            <p class="text-center text-body-sm text-text-secondary mt-8">
+              Don't have an account?
+              <a
+                routerLink="/register"
+                class="text-text-accent hover:underline font-medium transition-colors ml-1"
+                >Sign up</a
+              >
             </p>
           </div>
         </div>
@@ -106,7 +138,7 @@ export class LoginComponent {
       this.errorMessage.set('Please provide an email to use Passkey.');
       return;
     }
-    
+
     this.loading.set(true);
     try {
       await this.authService.loginWithPasskey(this.email());
