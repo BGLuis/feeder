@@ -422,7 +422,16 @@ export class DashboardComponent implements OnInit {
 
   getSelectorsJson(feed: FeedSubscription | null): string {
     if (!feed || !feed.source || !feed.source.selectors) return '';
-    return JSON.stringify(feed.source.selectors, null, 2);
+    const sel = feed.source.selectors;
+    if (typeof sel === 'string') {
+      try {
+        const parsed = JSON.parse(sel);
+        return JSON.stringify(parsed, null, 2);
+      } catch {
+        return sel;
+      }
+    }
+    return JSON.stringify(sel, null, 2);
   }
 
   async saveEdit(newName: string, newUrl: string, newSelectorsStr: string) {

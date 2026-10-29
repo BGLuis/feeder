@@ -3,9 +3,11 @@ import {
   ElementRef,
   EventEmitter,
   Input,
+  OnChanges,
   OnDestroy,
   OnInit,
   Output,
+  SimpleChanges,
   ViewChild,
   afterNextRender,
   effect,
@@ -53,7 +55,7 @@ export interface CodeTemplate {
     </div>
   `
 })
-export class CodeEditorComponent implements OnInit, OnDestroy {
+export class CodeEditorComponent implements OnInit, OnDestroy, OnChanges {
   @ViewChild('editorContainer', { static: true }) editorContainer!: ElementRef;
 
   @Input() title: string = 'Code Editor';
@@ -79,6 +81,15 @@ export class CodeEditorComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {}
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['code'] && this.editor) {
+      const newCode = changes['code'].currentValue ?? '';
+      if (this.editor.getValue() !== newCode) {
+        this.editor.setValue(newCode);
+      }
+    }
+  }
 
   async initMonaco() {
     try {
@@ -111,8 +122,12 @@ export class CodeEditorComponent implements OnInit, OnDestroy {
     if (index === '') return;
     
     const template = this.templates[index];
-    if (template && this.editor) {
-      this.editor.setValue(template.code);
+    if (template) {
+      this.code = template.code;
+      if (this.editor) {
+        this.editor.setValue(template.code);
+      }
+      this.codeChange.emit(template.code);
     }
   }
 
