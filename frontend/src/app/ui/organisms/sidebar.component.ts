@@ -91,7 +91,7 @@ import { BottomNavComponent } from './bottom-nav.component';
               routerLink="/"
               [routerLinkActiveOptions]="{ exact: true }"
               routerLinkActive="bg-bg-selected text-text-primary border-l-[3px] border-l-border-focus font-medium"
-              class="flex items-center rounded-lg text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-colors text-sm"
+              class="press flex items-center rounded-lg text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-all duration-base ease-standard text-sm"
               [class.justify-center]="!isExpanded"
               [class.h-10]="!isExpanded"
               [class.w-10]="!isExpanded"
@@ -110,7 +110,7 @@ import { BottomNavComponent } from './bottom-nav.component';
             <a
               routerLink="/reader"
               routerLinkActive="bg-bg-selected text-text-primary border-l-[3px] border-l-border-focus font-medium"
-              class="flex items-center rounded-lg text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-colors text-sm"
+              class="press flex items-center rounded-lg text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-all duration-base ease-standard text-sm"
               [class.justify-center]="!isExpanded"
               [class.h-10]="!isExpanded"
               [class.w-10]="!isExpanded"
@@ -129,7 +129,7 @@ import { BottomNavComponent } from './bottom-nav.component';
             <a
               routerLink="/discover"
               routerLinkActive="bg-bg-selected text-text-primary border-l-[3px] border-l-border-focus font-medium"
-              class="flex items-center rounded-lg text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-colors text-sm"
+              class="press flex items-center rounded-lg text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-all duration-base ease-standard text-sm"
               [class.justify-center]="!isExpanded"
               [class.h-10]="!isExpanded"
               [class.w-10]="!isExpanded"
@@ -159,7 +159,7 @@ import { BottomNavComponent } from './bottom-nav.component';
               <a
                 routerLink="/admin"
                 routerLinkActive="bg-bg-selected text-text-primary border-l-[3px] border-l-border-focus font-medium"
-                class="flex items-center rounded-lg text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-colors text-sm"
+                class="press flex items-center rounded-lg text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-all duration-base ease-standard text-sm"
                 [class.justify-center]="!isExpanded"
                 [class.h-10]="!isExpanded"
                 [class.w-10]="!isExpanded"
@@ -179,7 +179,7 @@ import { BottomNavComponent } from './bottom-nav.component';
             <a
               routerLink="/settings"
               routerLinkActive="bg-bg-selected text-text-primary border-l-[3px] border-l-border-focus font-medium"
-              class="flex items-center rounded-lg text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-colors text-sm"
+              class="press flex items-center rounded-lg text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-all duration-base ease-standard text-sm"
               [class.justify-center]="!isExpanded"
               [class.h-10]="!isExpanded"
               [class.w-10]="!isExpanded"

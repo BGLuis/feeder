@@ -13,6 +13,10 @@
     @apply bg-bg-canvas font-sans text-text-primary;
   }
 
+  a {
+    transition: color var(--duration-base) var(--easing-standard);
+  }
+
   /* Motion budget: honour the OS "reduce motion" setting everywhere. */
   @media (prefers-reduced-motion: reduce) {
     *,
@@ -22,6 +26,12 @@
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
+    }
+
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+      animation: none !important;
     }
   }
 
@@ -125,6 +135,38 @@
     to {
       opacity: 1;
       transform: scale(1);
+    }
+  }
+
+  /* SPA View Transitions - scoped exclusively to main page content */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+
+  ::view-transition-old(page-content) {
+    animation: fade-out var(--duration-fast) var(--easing-exit) forwards;
+  }
+
+  ::view-transition-new(page-content) {
+    animation: fade-in var(--duration-base) var(--easing-enter) forwards;
+  }
+
+  @keyframes fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
     }
   }
 
