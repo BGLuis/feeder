@@ -89,6 +89,7 @@ describe('molecules', () => {
     // When unread
     let accentBar = fixture.nativeElement.querySelector('app-article-card span.bg-emerald-500');
     expect(accentBar).toBeTruthy();
+    expect(accentBar.classList.contains('scale-y-100')).toBe(true);
 
     const titleLink = fixture.nativeElement.querySelector('app-article-card h2 a') as HTMLAnchorElement;
     expect(titleLink.textContent?.trim()).toBe('Breaking Tech News');
@@ -99,7 +100,7 @@ describe('molecules', () => {
     fixture.detectChanges();
 
     accentBar = fixture.nativeElement.querySelector('app-article-card span.bg-emerald-500');
-    expect(accentBar).toBeFalsy();
+    expect(accentBar.classList.contains('scale-y-0')).toBe(true);
     expect(titleLink.classList.contains('text-text-secondary')).toBe(true);
   });
 

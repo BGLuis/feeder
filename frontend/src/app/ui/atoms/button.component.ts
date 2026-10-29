@@ -4,7 +4,7 @@ export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 const BASE =
-  'inline-flex items-center justify-center gap-2 rounded-full font-medium transition-colors duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:shadow-focus-ring disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100';
+  'inline-flex items-center justify-center gap-2 rounded-full font-medium press focus-visible:outline-none focus-visible:shadow-focus-ring disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none';
 
 const VARIANTS: Record<ButtonVariant, string> = {
   primary: 'bg-bg-inverse text-text-inverse hover:bg-bg-inverse-hover',

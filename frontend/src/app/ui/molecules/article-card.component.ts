@@ -25,12 +25,15 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
     <!-- COMPACT DENSITY -->
     @if (density() === 'compact') {
       <div
-        class="relative flex items-center justify-between gap-3 px-4 py-3 border-b border-border-subtle last:border-b-0 hover:bg-bg-hover transition-colors"
-        [class.opacity-70]="isRead()"
+        class="relative flex items-center justify-between gap-3 px-4 py-3 border-b border-border-subtle last:border-b-0 hover:bg-bg-hover transition-all duration-base ease-standard"
+        [class.opacity-100]="!isRead()"
+        [class.opacity-[0.64]]="isRead()"
       >
-        @if (!isRead()) {
-          <span class="absolute left-0 top-2 bottom-2 w-[3px] rounded-r bg-emerald-500"></span>
-        }
+        <span
+          class="absolute left-0 top-2 bottom-2 w-[3px] rounded-r bg-emerald-500 transition-transform duration-base ease-exit origin-top"
+          [class.scale-y-0]="isRead()"
+          [class.scale-y-100]="!isRead()"
+        ></span>
         <div class="flex items-center gap-3 min-w-0 flex-1">
           <app-source-mark
             [name]="sourceName()"
@@ -60,7 +63,7 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
           <button
             type="button"
             (click)="toggleSave.emit(article())"
-            class="p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
+            class="press p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
             [class.text-icon-accent]="isSaved()"
             [title]="isSaved() ? 'Remover dos salvos' : 'Salvar artigo'"
           >
@@ -69,7 +72,7 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
           <button
             type="button"
             (click)="markRead.emit(article())"
-            class="p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
+            class="press p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
             [class.text-icon-accent]="isRead()"
             [title]="isRead() ? 'Marcar como não lido' : 'Marcar como lido'"
           >
@@ -80,7 +83,7 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
             target="_blank"
             rel="noopener"
             (click)="onOpen($event)"
-            class="p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
+            class="press p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
             title="Abrir link externo"
           >
             <svg lucideExternalLink class="w-4 h-4"></svg>
@@ -92,12 +95,15 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
     <!-- COMFORTABLE DENSITY -->
     @if (density() === 'comfortable') {
       <article
-        class="relative rounded-2xl border border-border-default bg-bg-surface p-6 hover:border-border-strong hover:shadow-elevation-2 transition-all group"
-        [class.opacity-75]="isRead()"
+        class="relative rounded-2xl border border-border-default bg-bg-surface p-6 hover:-translate-y-0.5 hover:border-border-strong hover:shadow-elevation-2 transition-all duration-base ease-standard group"
+        [class.opacity-100]="!isRead()"
+        [class.opacity-[0.64]]="isRead()"
       >
-        @if (!isRead()) {
-          <span class="absolute left-0 top-6 bottom-6 w-[3px] rounded-r bg-emerald-500"></span>
-        }
+        <span
+          class="absolute left-0 top-6 bottom-6 w-[3px] rounded-r bg-emerald-500 transition-transform duration-base ease-exit origin-top"
+          [class.scale-y-0]="isRead()"
+          [class.scale-y-100]="!isRead()"
+        ></span>
 
         <div class="flex items-center gap-2.5 mb-3">
           <app-source-mark
@@ -113,7 +119,7 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
             <button
               type="button"
               (click)="toggleSave.emit(article())"
-              class="p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
+              class="press p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
               [class.text-icon-accent]="isSaved()"
               [title]="isSaved() ? 'Remover dos salvos' : 'Salvar artigo'"
             >
@@ -122,7 +128,7 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
             <button
               type="button"
               (click)="markRead.emit(article())"
-              class="p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
+              class="press p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
               [class.text-icon-accent]="isRead()"
               [title]="isRead() ? 'Marcar como não lido' : 'Marcar como lido'"
             >
@@ -133,7 +139,7 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
               target="_blank"
               rel="noopener"
               (click)="onOpen($event)"
-              class="p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
+              class="press p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
               title="Abrir link externo"
             >
               <svg lucideExternalLink class="w-4 h-4"></svg>
@@ -165,12 +171,15 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
     <!-- MAGAZINE DENSITY -->
     @if (density() === 'magazine') {
       <article
-        class="relative rounded-2xl border border-border-default bg-bg-surface p-6 hover:border-border-strong hover:shadow-elevation-2 transition-all group"
-        [class.opacity-75]="isRead()"
+        class="relative rounded-2xl border border-border-default bg-bg-surface p-6 hover:-translate-y-0.5 hover:border-border-strong hover:shadow-elevation-2 transition-all duration-base ease-standard group"
+        [class.opacity-100]="!isRead()"
+        [class.opacity-[0.64]]="isRead()"
       >
-        @if (!isRead()) {
-          <span class="absolute left-0 top-6 bottom-6 w-[3px] rounded-r bg-emerald-500"></span>
-        }
+        <span
+          class="absolute left-0 top-6 bottom-6 w-[3px] rounded-r bg-emerald-500 transition-transform duration-base ease-exit origin-top"
+          [class.scale-y-0]="isRead()"
+          [class.scale-y-100]="!isRead()"
+        ></span>
 
         <div class="flex items-center gap-2.5 mb-4">
           <app-source-mark
@@ -186,7 +195,7 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
             <button
               type="button"
               (click)="toggleSave.emit(article())"
-              class="p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
+              class="press p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
               [class.text-icon-accent]="isSaved()"
               [title]="isSaved() ? 'Remover dos salvos' : 'Salvar artigo'"
             >
@@ -195,7 +204,7 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
             <button
               type="button"
               (click)="markRead.emit(article())"
-              class="p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
+              class="press p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
               [class.text-icon-accent]="isRead()"
               [title]="isRead() ? 'Marcar como não lido' : 'Marcar como lido'"
             >
@@ -206,7 +215,7 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
               target="_blank"
               rel="noopener"
               (click)="onOpen($event)"
-              class="p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
+              class="press p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
               title="Abrir link externo"
             >
               <svg lucideExternalLink class="w-4 h-4"></svg>
@@ -219,11 +228,13 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
             <img
               [src]="article().imageUrl"
               [alt]="article().title"
+              (load)="imageLoaded.set(true)"
               (error)="onImageError()"
               loading="lazy"
               decoding="async"
               referrerpolicy="no-referrer"
-              class="w-full h-full object-cover"
+              class="w-full h-full object-cover media-fade"
+              [class.is-loaded]="imageLoaded()"
             />
           } @else {
             <div class="flex flex-col items-center justify-center text-icon-tertiary gap-2">
@@ -262,6 +273,7 @@ export class ArticleCardComponent {
   brandColor = input<string | null | undefined>(null);
 
   hasImageError = signal<boolean>(false);
+  imageLoaded = signal<boolean>(false);
 
   onImageError() {
     this.hasImageError.set(true);

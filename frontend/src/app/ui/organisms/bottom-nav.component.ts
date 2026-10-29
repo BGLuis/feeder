@@ -28,7 +28,7 @@ import { TranslatePipe } from '@ngx-translate/core';
         routerLink="/"
         [routerLinkActiveOptions]="{ exact: true }"
         routerLinkActive="text-text-primary font-medium"
-        class="flex flex-col items-center justify-center flex-1 h-full py-1 text-text-tertiary hover:text-text-secondary transition-colors"
+        class="press flex flex-col items-center justify-center flex-1 h-full py-1 text-text-tertiary hover:text-text-secondary transition-colors"
       >
         <svg lucideLayoutDashboard class="w-5 h-5 mb-0.5"></svg>
         <span class="text-[10px] tracking-tight leading-none">{{ 'NAV.DASHBOARD' | translate }}</span>
@@ -37,7 +37,7 @@ import { TranslatePipe } from '@ngx-translate/core';
       <a
         routerLink="/reader"
         routerLinkActive="text-text-primary font-medium"
-        class="flex flex-col items-center justify-center flex-1 h-full py-1 text-text-tertiary hover:text-text-secondary transition-colors"
+        class="press flex flex-col items-center justify-center flex-1 h-full py-1 text-text-tertiary hover:text-text-secondary transition-colors"
       >
         <svg lucideNewspaper class="w-5 h-5 mb-0.5"></svg>
         <span class="text-[10px] tracking-tight leading-none">{{ 'NAV.TIMELINE' | translate }}</span>
@@ -46,7 +46,7 @@ import { TranslatePipe } from '@ngx-translate/core';
       <a
         routerLink="/discover"
         routerLinkActive="text-text-primary font-medium"
-        class="flex flex-col items-center justify-center flex-1 h-full py-1 text-text-tertiary hover:text-text-secondary transition-colors"
+        class="press flex flex-col items-center justify-center flex-1 h-full py-1 text-text-tertiary hover:text-text-secondary transition-colors"
       >
         <svg lucidePlus class="w-5 h-5 mb-0.5"></svg>
         <span class="text-[10px] tracking-tight leading-none">{{ 'NAV.DISCOVER' | translate }}</span>
@@ -55,7 +55,7 @@ import { TranslatePipe } from '@ngx-translate/core';
       <a
         routerLink="/settings"
         routerLinkActive="text-text-primary font-medium"
-        class="flex flex-col items-center justify-center flex-1 h-full py-1 text-text-tertiary hover:text-text-secondary transition-colors"
+        class="press flex flex-col items-center justify-center flex-1 h-full py-1 text-text-tertiary hover:text-text-secondary transition-colors"
       >
         <svg lucideSettings class="w-5 h-5 mb-0.5"></svg>
         <span class="text-[10px] tracking-tight leading-none">{{ 'NAV.SETTINGS' | translate }}</span>

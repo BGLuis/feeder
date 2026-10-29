@@ -59,7 +59,7 @@ import {
               <button
                 type="button"
                 (click)="runAction(toast)"
-                class="shrink-0 rounded-md px-2.5 py-1 text-xs font-semibold text-text-accent hover:bg-bg-accent-subtle transition-colors"
+                class="press shrink-0 rounded-md px-2.5 py-1 text-xs font-semibold text-text-accent hover:bg-bg-accent-subtle transition-colors"
               >
                 {{ toast.action.label }}
               </button>
@@ -68,7 +68,7 @@ import {
             <button
               type="button"
               (click)="toastService.dismiss(toast.id)"
-              class="shrink-0 rounded-md p-1 text-icon-tertiary transition-colors hover:text-icon-primary hover:bg-bg-hover"
+              class="press shrink-0 rounded-md p-1 text-icon-tertiary transition-colors hover:text-icon-primary hover:bg-bg-hover"
               aria-label="Dismiss"
             >
               <svg lucideX class="w-3.5 h-3.5"></svg>
@@ -89,7 +89,7 @@ import {
   styles: [
     `
       .toast-item {
-        animation: toast-in 200ms cubic-bezier(0.2, 0.9, 0.3, 1);
+        animation: toast-in var(--duration-base) var(--easing-enter);
       }
       @keyframes toast-in {
         from {

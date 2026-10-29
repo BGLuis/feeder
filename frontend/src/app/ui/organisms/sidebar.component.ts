@@ -45,7 +45,7 @@ import { BottomNavComponent } from './bottom-nav.component';
   template: `
     <!-- Desktop Sidebar -->
     <aside
-      class="hidden md:flex h-full bg-bg-sidebar border-r border-border-default flex-col py-6 transition-all duration-200 relative select-none shrink-0"
+      class="hidden md:flex h-full bg-bg-sidebar border-r border-border-default flex-col py-6 transition-all duration-slow ease-standard relative select-none shrink-0"
       [class.w-[248px]]="isExpanded"
       [class.w-[72px]]="!isExpanded"
     >
@@ -53,7 +53,7 @@ import { BottomNavComponent } from './bottom-nav.component';
       <button
         type="button"
         (click)="toggle()"
-        class="absolute -right-3 top-8 bg-bg-surface border border-border-default text-icon-secondary hover:text-icon-primary rounded-full p-1 z-20 shadow-elevation-1 transition-transform hover:scale-110 focus:outline-none focus:shadow-focus-ring"
+        class="press absolute -right-3 top-8 bg-bg-surface border border-border-default text-icon-secondary hover:text-icon-primary rounded-full p-1 z-20 shadow-elevation-1 transition-transform hover:scale-110 focus:outline-none focus:shadow-focus-ring"
         [attr.aria-label]="isExpanded ? 'Recolher sidebar' : 'Expandir sidebar'"
       >
         @if (isExpanded) {
@@ -73,7 +73,7 @@ import { BottomNavComponent } from './bottom-nav.component';
           <svg lucideRss class="w-4 h-4"></svg>
         </div>
         @if (isExpanded) {
-          <span class="text-xl font-medium text-text-primary tracking-tight truncate">Feeder</span>
+          <span class="text-xl font-medium text-text-primary tracking-tight truncate transition-opacity duration-fast ease-standard">Feeder</span>
         }
       </div>
 
@@ -224,7 +224,7 @@ import { BottomNavComponent } from './bottom-nav.component';
             <button
               type="button"
               (click)="themeService.toggleTheme()"
-              class="p-1.5 rounded-md text-icon-secondary hover:text-icon-primary hover:bg-bg-hover transition-colors"
+              class="press p-1.5 rounded-md text-icon-secondary hover:text-icon-primary hover:bg-bg-hover transition-colors"
               [title]="themeService.isDarkMode() ? 'Modo claro' : 'Modo escuro'"
             >
               @if (themeService.isDarkMode()) {
@@ -236,7 +236,7 @@ import { BottomNavComponent } from './bottom-nav.component';
             <button
               type="button"
               (click)="logout()"
-              class="p-1.5 rounded-md text-icon-secondary hover:text-icon-danger hover:bg-bg-danger-subtle transition-colors"
+              class="press p-1.5 rounded-md text-icon-secondary hover:text-icon-danger hover:bg-bg-danger-subtle transition-colors"
               title="Logout"
             >
               <svg lucideLogOut class="w-4 h-4"></svg>
@@ -257,7 +257,7 @@ import { BottomNavComponent } from './bottom-nav.component';
           <button
             type="button"
             (click)="themeService.toggleTheme()"
-            class="p-2 rounded-md text-icon-secondary hover:text-icon-primary hover:bg-bg-hover transition-colors"
+            class="press p-2 rounded-md text-icon-secondary hover:text-icon-primary hover:bg-bg-hover transition-colors"
             [title]="themeService.isDarkMode() ? 'Modo claro' : 'Modo escuro'"
           >
             @if (themeService.isDarkMode()) {
@@ -270,7 +270,7 @@ import { BottomNavComponent } from './bottom-nav.component';
           <button
             type="button"
             (click)="logout()"
-            class="p-2 rounded-md text-icon-secondary hover:text-icon-danger hover:bg-bg-danger-subtle transition-colors"
+            class="press p-2 rounded-md text-icon-secondary hover:text-icon-danger hover:bg-bg-danger-subtle transition-colors"
             title="Logout"
           >
             <svg lucideLogOut class="w-4 h-4"></svg>

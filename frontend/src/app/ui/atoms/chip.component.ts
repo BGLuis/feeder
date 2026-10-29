@@ -9,7 +9,7 @@ import { Component, input, model } from '@angular/core';
       [attr.aria-pressed]="selected()"
       [disabled]="disabled()"
       (click)="toggle()"
-      class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all select-none focus-visible:outline-none focus-visible:shadow-focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
+      class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium press select-none focus-visible:outline-none focus-visible:shadow-focus-ring disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
       [class]="
         selected()
           ? 'bg-bg-inverse text-text-inverse shadow-elevation-1'

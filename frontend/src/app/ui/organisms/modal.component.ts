@@ -8,14 +8,14 @@ import { LucideX } from '@lucide/angular';
   template: `
     @if (open()) {
       <div
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-overlay backdrop-blur-[4px] transition-all"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-overlay backdrop-blur-[4px] modal-scrim-enter"
         (click)="onBackdropClick($event)"
         role="dialog"
         aria-modal="true"
         [attr.aria-labelledby]="title() ? 'modal-title' : null"
       >
         <div
-          class="relative w-full max-w-[600px] max-h-[90vh] flex flex-col rounded-3xl border border-border-default bg-bg-surface shadow-elevation-4 overflow-hidden transition-all animate-in fade-in zoom-in-95 duration-200"
+          class="relative w-full max-w-[600px] max-h-[90vh] flex flex-col rounded-3xl border border-border-default bg-bg-surface shadow-elevation-4 overflow-hidden modal-panel-enter"
           (click)="$event.stopPropagation()"
         >
           <!-- Header -->
@@ -36,7 +36,7 @@ import { LucideX } from '@lucide/angular';
             <button
               type="button"
               (click)="close.emit()"
-              class="p-2 -mr-2 -mt-2 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
+              class="press p-2 -mr-2 -mt-2 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
               aria-label="Fechar"
             >
               <svg lucideX class="w-5 h-5"></svg>

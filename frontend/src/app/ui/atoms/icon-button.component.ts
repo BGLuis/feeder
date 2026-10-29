@@ -25,6 +25,6 @@ export class IconButtonComponent {
 
   classes = computed(
     () =>
-      `inline-flex items-center justify-center rounded-full text-text-secondary transition-colors hover:bg-bg-muted hover:text-text-primary focus-visible:outline-none focus-visible:shadow-focus-ring disabled:opacity-50 disabled:cursor-not-allowed ${SIZES[this.size()]}`,
+      `inline-flex items-center justify-center rounded-full text-text-secondary press hover:bg-bg-muted hover:text-text-primary focus-visible:outline-none focus-visible:shadow-focus-ring disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none ${SIZES[this.size()]}`,
   );
 }

@@ -37,13 +37,13 @@
   /* Physical click feedback for any interactive element. */
   .press {
     transition:
-      transform 120ms ease-out,
-      background-color 200ms,
-      color 200ms,
-      box-shadow 200ms;
+      transform var(--duration-fast) var(--easing-standard),
+      background-color var(--duration-base) var(--easing-standard),
+      color var(--duration-base) var(--easing-standard),
+      box-shadow var(--duration-base) var(--easing-standard);
   }
   .press:active {
-    transform: scale(0.97);
+    transform: scale(var(--scale-press));
   }
 
   /* Skeleton placeholder that takes the shape of the content it replaces. */
@@ -76,8 +76,8 @@
     opacity: 0;
     filter: blur(8px);
     transition:
-      opacity 220ms ease-out,
-      filter 220ms ease-out;
+      opacity var(--duration-moderate) var(--easing-standard),
+      filter var(--duration-moderate) var(--easing-standard);
   }
   .media-fade.is-loaded {
     opacity: 1;
@@ -86,13 +86,45 @@
 
   /* Staggered list entrance — set --i on each row. */
   .rise-in {
-    animation: rise-in 260ms ease-out backwards;
-    animation-delay: calc(var(--i, 0) * 40ms);
+    animation: rise-in var(--duration-moderate) var(--easing-enter) backwards;
+    animation-delay: calc(var(--i, 0) * var(--duration-stagger));
   }
   @keyframes rise-in {
     from {
       opacity: 0;
       transform: translateY(6px);
+    }
+  }
+
+  /* Sync rotation animation - 800ms linear loop */
+  .animate-spin-sync {
+    animation: spin 800ms linear infinite;
+  }
+
+  /* Modal motion - duration-slow (400ms) with easing-enter */
+  .modal-scrim-enter {
+    animation: modal-scrim-in var(--duration-slow) var(--easing-enter) forwards;
+  }
+  @keyframes modal-scrim-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .modal-panel-enter {
+    animation: modal-panel-in var(--duration-slow) var(--easing-enter) forwards;
+  }
+  @keyframes modal-panel-in {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
     }
   }
 

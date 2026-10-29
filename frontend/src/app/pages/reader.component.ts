@@ -69,7 +69,7 @@ const LOCAL_CAP = 1000;
               <svg
                 lucideRefreshCw
                 class="w-4 h-4"
-                [class.animate-spin]="loading()"
+                [class.animate-spin-sync]="loading()"
               ></svg>
               <span>Refresh</span>
             </app-button>
@@ -177,6 +177,8 @@ const LOCAL_CAP = 1000;
                 >
                   @for (article of group.items; track article.id) {
                     <app-article-card
+                      class="rise-in block"
+                      [style.--i]="$index < 8 ? $index : 8"
                       [article]="article"
                       density="compact"
                       [isRead]="isRead(article.id)"
@@ -193,6 +195,8 @@ const LOCAL_CAP = 1000;
                 <div class="space-y-4">
                   @for (article of group.items; track article.id) {
                     <app-article-card
+                      class="rise-in block"
+                      [style.--i]="$index < 8 ? $index : 8"
                       [article]="article"
                       [density]="density()"
                       [isRead]="isRead(article.id)"

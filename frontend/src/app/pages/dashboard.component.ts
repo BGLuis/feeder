@@ -153,6 +153,8 @@ import { CodeEditorComponent, CodeTemplate } from '../ui/atoms/code-editor.compo
             >
               @for (feed of filteredFeeds(); track feed.id || feed.source?.url) {
                 <app-subscription-row
+                  class="rise-in block"
+                  [style.--i]="$index < 8 ? $index : 8"
                   [feed]="feed"
                   (refresh)="refreshFeed($event)"
                   (edit)="openEditModal($event)"
