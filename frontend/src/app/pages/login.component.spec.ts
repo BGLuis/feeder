@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { LoginComponent } from './login.component';
 import { AuthService } from '../core/auth.service';
-import { Router } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 
 class MockAuthService {
   loginArgs: any[] = [];
@@ -19,31 +19,25 @@ class MockAuthService {
   }
 }
 
-class MockRouter {
-  navigateArgs: any[] = [];
-  navigate(args: any[]) {
-    this.navigateArgs = args;
-  }
-}
 
 describe('LoginComponent', () => {
   let component: LoginComponent;
   let fixture: ComponentFixture<LoginComponent>;
   let authServiceMock: MockAuthService;
-  let routerMock: MockRouter;
+  let navigateSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(async () => {
     authServiceMock = new MockAuthService();
-    routerMock = new MockRouter();
 
     await TestBed.configureTestingModule({
       imports: [LoginComponent],
       providers: [
         { provide: AuthService, useValue: authServiceMock },
-        { provide: Router, useValue: routerMock }
+        provideRouter([])
       ]
     }).compileComponents();
 
+    navigateSpy = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     fixture = TestBed.createComponent(LoginComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
@@ -57,7 +51,7 @@ describe('LoginComponent', () => {
     await component.onLogin();
     
     expect(authServiceMock.loginArgs).toEqual(['test@test.com', 'wrong']);
-    expect(component.errorMessage()).toBe('Falha no login. Verifique suas credenciais.');
+    expect(component.errorMessage()).toBe('Invalid credentials. Please try again.');
   });
 
   it('should navigate to dashboard on successful login', async () => {
@@ -67,7 +61,7 @@ describe('LoginComponent', () => {
     component.password.set('correct');
     await component.onLogin();
     
-    expect(routerMock.navigateArgs).toEqual(['/']);
+    expect(navigateSpy).toHaveBeenCalledWith(['/']);
     expect(component.errorMessage()).toBe('');
   });
 
@@ -76,6 +70,6 @@ describe('LoginComponent', () => {
     await component.onLoginWithPasskey();
     
     expect(authServiceMock.loginWithPasskeyArgs).toEqual([]);
-    expect(component.errorMessage()).toBe('Informe seu email para usar Passkey.');
+    expect(component.errorMessage()).toBe('Please provide an email to use Passkey.');
   });
 });
