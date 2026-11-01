@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { startAuthentication, startRegistration } from '@simplewebauthn/browser';
 import { firstValueFrom } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import { API_BASE_URL } from './api.token';
 
 export interface AuthResponse {
   access_token: string;
@@ -23,7 +24,8 @@ export interface UserPayload {
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:3000/auth';
+  private apiBaseUrl = inject(API_BASE_URL);
+  private apiUrl = `${this.apiBaseUrl}/auth`;
   
   currentUser = signal<UserPayload | null>(null);
 

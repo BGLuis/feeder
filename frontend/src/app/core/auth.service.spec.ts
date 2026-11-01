@@ -33,7 +33,7 @@ describe('AuthService', () => {
 
   it('should save token on successful login', async () => {
     const promise = service.login('test@test.com', 'password');
-    const req = httpTesting.expectOne('http://localhost:3000/auth/login');
+    const req = httpTesting.expectOne('/api/auth/login');
     expect(req.request.method).toBe('POST');
     req.flush({ access_token: 'fake-jwt-token' });
 
@@ -43,7 +43,7 @@ describe('AuthService', () => {
 
   it('should propagate error on failed login', async () => {
     const promise = service.login('test@test.com', 'wrong');
-    const req = httpTesting.expectOne('http://localhost:3000/auth/login');
+    const req = httpTesting.expectOne('/api/auth/login');
     req.flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
 
     try {

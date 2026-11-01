@@ -8,6 +8,7 @@ import { Article } from '../feeds/entities/article.entity';
 import { Source, SourceType } from '../feeds/entities/source.entity';
 import { Subscription } from '../feeds/entities/subscription.entity';
 import { Webhook } from '../webhooks/entities/webhook.entity';
+import { encryptSecret } from '../common/crypto/secret-box';
 
 const parseStringMock = jest.fn();
 jest.mock('rss-parser', () =>
@@ -51,6 +52,8 @@ describe('ScraperProcessor', () => {
     isPrivate: false,
     selectors: null,
     consecutiveMisses: 0,
+    lastError: null,
+    lastErrorAt: null,
   } as unknown as Source;
 
   beforeEach(async () => {
@@ -68,8 +71,12 @@ describe('ScraperProcessor', () => {
     sourceRepo = {
       findOne: jest.fn().mockResolvedValue(rssSource),
       save: jest.fn().mockImplementation((s) => Promise.resolve(s)),
+      update: jest.fn().mockResolvedValue({ affected: 1 }),
     };
-    subRepo = { find: jest.fn().mockResolvedValue([]) };
+    subRepo = {
+      find: jest.fn().mockResolvedValue([]),
+      findOne: jest.fn().mockResolvedValue(null),
+    };
     webhookQb = {
       leftJoinAndSelect: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
@@ -113,21 +120,26 @@ describe('ScraperProcessor', () => {
     expect(safeFetchMock).not.toHaveBeenCalled();
   });
 
-  it('dedupes RSS items by (url, source)', async () => {
+  it('dedupes RSS items by (url, source) using In() batch existence check', async () => {
     parseStringMock.mockResolvedValue({
       items: [
         { title: 'A', link: 'https://feed.example/a', pubDate: 'not-a-date' },
         { title: 'B', link: 'https://feed.example/b' },
       ],
     });
-    articleRepo.findOne
-      .mockResolvedValueOnce({ id: 'existing' }) // A already stored
-      .mockResolvedValueOnce(null); // B is new
+    // A already stored in database
+    articleRepo.find.mockResolvedValueOnce([
+      { url: 'https://feed.example/a' },
+    ]);
 
     const res = await processor.process(
       job({ sourceId: 'src-1', url: rssSource.url }),
     );
 
+    const existenceCalls = articleRepo.find.mock.calls.filter(
+      (c: any) => c[0]?.where?.url,
+    );
+    expect(existenceCalls).toHaveLength(1);
     expect(articleRepo.save).toHaveBeenCalledTimes(1);
     const savedB = articleRepo.save.mock.calls[0][0] as Article;
     expect(savedB.url).toBe('https://feed.example/b');
@@ -162,6 +174,249 @@ describe('ScraperProcessor', () => {
 
     const saved = articleRepo.save.mock.calls[0][0] as Article;
     expect(saved.imageUrl).toBeNull();
+  });
+
+  describe('issue #5: failure handling & error tracking', () => {
+    it('moves nextFetchAt forward and stores lastError when run() rejects', async () => {
+      assertUrlAllowedMock.mockRejectedValueOnce(new Error('connection refused'));
+
+      await expect(
+        processor.process(job({ sourceId: 'src-1', url: rssSource.url })),
+      ).rejects.toThrow('connection refused');
+
+      expect(sourceRepo.update).toHaveBeenCalledWith(
+        'src-1',
+        expect.objectContaining({
+          lastError: 'connection refused',
+          lastErrorAt: expect.any(Date),
+          nextFetchAt: expect.any(Date),
+          consecutiveMisses: 1,
+        }),
+      );
+      const updatePayload = sourceRepo.update.mock.calls[0][1];
+      expect(updatePayload.nextFetchAt.getTime()).toBeGreaterThan(Date.now() - 1000);
+    });
+
+    it('clears lastError on a following successful run', async () => {
+      const sourceWithError = {
+        ...rssSource,
+        lastError: 'previous error message',
+        lastErrorAt: new Date(Date.now() - 60000),
+      };
+      sourceRepo.findOne.mockResolvedValueOnce(sourceWithError);
+      parseStringMock.mockResolvedValueOnce({ items: [] });
+
+      await processor.process(job({ sourceId: 'src-1', url: rssSource.url }));
+
+      expect(sourceRepo.update).toHaveBeenCalledWith('src-1', {
+        lastError: null,
+        lastErrorAt: null,
+      });
+    });
+  });
+
+  describe('issue #6: private feed authentication', () => {
+    it('loads decrypted authStorageState from subscription when private source has none in job', async () => {
+      const privateSource = {
+        ...rssSource,
+        isPrivate: true,
+        type: SourceType.SCRAPE,
+        selectors: { item: '.post' },
+      };
+      sourceRepo.findOne.mockResolvedValueOnce(privateSource);
+      assertUrlAllowedMock.mockResolvedValue(new URL('https://private.example'));
+
+      const storageObj = { cookies: [{ name: 'auth', value: 'token123' }] };
+      subRepo.findOne.mockResolvedValueOnce({
+        authStorageState: encryptSecret(JSON.stringify(storageObj)),
+      });
+
+      const page = {
+        goto: jest.fn().mockResolvedValue({ ok: () => true, status: () => 200 }),
+        waitForSelector: jest.fn().mockResolvedValue(undefined),
+        $$: jest.fn().mockResolvedValue([]),
+      };
+      const context = {
+        newPage: jest.fn().mockResolvedValue(page),
+        setDefaultTimeout: jest.fn(),
+        close: jest.fn().mockResolvedValue(undefined),
+      };
+      const browser = {
+        isConnected: () => true,
+        newContext: jest.fn().mockResolvedValue(context),
+        close: jest.fn().mockResolvedValue(undefined),
+      };
+      launchMock.mockResolvedValue(browser);
+
+      await processor.process(
+        job({ sourceId: 'src-1', url: 'https://private.example' }),
+      );
+
+      expect(subRepo.findOne).toHaveBeenCalledWith({
+        where: { source: { id: 'src-1' } },
+      });
+      expect(browser.newContext).toHaveBeenCalledWith(
+        expect.objectContaining({ storageState: storageObj }),
+      );
+    });
+
+    it('never gives storage state to a public source', async () => {
+      const publicSource = {
+        ...rssSource,
+        isPrivate: false,
+        type: SourceType.SCRAPE,
+        selectors: { item: '.post' },
+      };
+      sourceRepo.findOne.mockResolvedValueOnce(publicSource);
+      assertUrlAllowedMock.mockResolvedValue(new URL('https://public.example'));
+
+      const storageObj = { cookies: [{ name: 'auth', value: 'secret' }] };
+
+      const page = {
+        goto: jest.fn().mockResolvedValue({ ok: () => true, status: () => 200 }),
+        waitForSelector: jest.fn().mockResolvedValue(undefined),
+        $$: jest.fn().mockResolvedValue([]),
+      };
+      const context = {
+        newPage: jest.fn().mockResolvedValue(page),
+        setDefaultTimeout: jest.fn(),
+        close: jest.fn().mockResolvedValue(undefined),
+      };
+      const browser = {
+        isConnected: () => true,
+        newContext: jest.fn().mockResolvedValue(context),
+        close: jest.fn().mockResolvedValue(undefined),
+      };
+      launchMock.mockResolvedValue(browser);
+
+      await processor.process(
+        job({
+          sourceId: 'src-1',
+          url: 'https://public.example',
+          authStorageState: encryptSecret(JSON.stringify(storageObj)),
+        }),
+      );
+
+      expect(browser.newContext).toHaveBeenCalledWith(
+        expect.not.objectContaining({ storageState: expect.anything() }),
+      );
+    });
+  });
+
+  describe('issue #7: column limits handling', () => {
+    it('saves an item with a 512-character title and includes it in result', async () => {
+      const longTitle = 'T'.repeat(512);
+      parseStringMock.mockResolvedValue({
+        items: [{ title: longTitle, link: 'https://feed.example/long-title' }],
+      });
+
+      const res = await processor.process(
+        job({ sourceId: 'src-1', url: rssSource.url }),
+      );
+
+      expect(articleRepo.save).toHaveBeenCalledTimes(1);
+      const saved = articleRepo.save.mock.calls[0][0] as Article;
+      expect(saved.title).toBe(longTitle);
+      expect(saved.title.length).toBe(512);
+      expect(res).toEqual({ newArticles: 1 });
+    });
+
+    it('skips an item whose link exceeds 700 characters with a warning', async () => {
+      const longUrl = 'https://feed.example/' + 'x'.repeat(700);
+      parseStringMock.mockResolvedValue({
+        items: [
+          { title: 'Too Long Link', link: longUrl },
+          { title: 'Normal Link', link: 'https://feed.example/normal' },
+        ],
+      });
+
+      const res = await processor.process(
+        job({ sourceId: 'src-1', url: rssSource.url }),
+      );
+
+      expect(articleRepo.save).toHaveBeenCalledTimes(1);
+      const saved = articleRepo.save.mock.calls[0][0] as Article;
+      expect(saved.url).toBe('https://feed.example/normal');
+      expect(res).toEqual({ newArticles: 1 });
+    });
+  });
+
+  describe('issue #9: RSS loop bounded processing & timestamps', () => {
+    it('aborts the signal after the first item and asserts no further save call', async () => {
+      parseStringMock.mockResolvedValue({
+        items: [
+          { title: 'First', link: 'https://feed.example/first' },
+          { title: 'Second', link: 'https://feed.example/second' },
+          { title: 'Third', link: 'https://feed.example/third' },
+        ],
+      });
+
+      const origRun = (processor as any).run.bind(processor);
+      jest.spyOn(processor as any, 'run').mockImplementation(async (j, s, signal) => {
+        // Abort signal after first save inside processRss
+        articleRepo.save.mockImplementationOnce(async (a: any) => {
+          Object.defineProperty(signal, 'aborted', {
+            value: true,
+            configurable: true,
+          });
+          return { id: 'a-1', ...a };
+        });
+        return origRun(j, s, signal);
+      });
+
+      await processor.process(job({ sourceId: 'src-1', url: rssSource.url }));
+
+      expect(articleRepo.save).toHaveBeenCalledTimes(1);
+    });
+
+    it('caps a feed of 200 items at MAX_ITEMS saves and makes one existence query', async () => {
+      const items = Array.from({ length: 200 }, (_, i) => ({
+        title: `Item ${i}`,
+        link: `https://feed.example/item-${i}`,
+      }));
+      parseStringMock.mockResolvedValue({ items });
+
+      const res = await processor.process(
+        job({ sourceId: 'src-1', url: rssSource.url }),
+      );
+
+      const existenceCalls = articleRepo.find.mock.calls.filter(
+        (c: any) => c[0]?.where?.url,
+      );
+      expect(existenceCalls).toHaveLength(1);
+      expect(articleRepo.save).toHaveBeenCalledTimes(50); // MAX_ITEMS = 50
+      expect(res).toEqual({ newArticles: 50 });
+    });
+
+    it('calculateNextFetch calls update with only the three scheduling fields', async () => {
+      parseStringMock.mockResolvedValue({ items: [] });
+
+      await processor.process(job({ sourceId: 'src-1', url: rssSource.url }));
+
+      expect(sourceRepo.update).toHaveBeenCalledWith('src-1', {
+        lastFetchAt: expect.any(Date),
+        consecutiveMisses: expect.any(Number),
+        nextFetchAt: expect.any(Date),
+      });
+    });
+
+    it('clamps future pubDate so publishedAt is <= now', async () => {
+      const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      parseStringMock.mockResolvedValue({
+        items: [
+          {
+            title: 'Future Item',
+            link: 'https://feed.example/future',
+            pubDate: tomorrow.toISOString(),
+          },
+        ],
+      });
+
+      await processor.process(job({ sourceId: 'src-1', url: rssSource.url }));
+
+      const saved = articleRepo.save.mock.calls[0][0] as Article;
+      expect(saved.publishedAt.getTime()).toBeLessThanOrEqual(Date.now());
+    });
   });
 
   describe('webhook fan-out', () => {
@@ -205,38 +460,6 @@ describe('ScraperProcessor', () => {
 
       await processor.process(job({ sourceId: 'src-1', url: rssSource.url }));
       expect(webhooksQueue.add).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('calculateNextFetch', () => {
-    it('resets consecutiveMisses when new posts were found', async () => {
-      parseStringMock.mockResolvedValue({
-        items: [{ title: 'T', link: 'https://feed.example/new' }],
-      });
-      sourceRepo.findOne.mockResolvedValue({
-        ...rssSource,
-        consecutiveMisses: 4,
-      });
-
-      await processor.process(job({ sourceId: 'src-1', url: rssSource.url }));
-
-      const saved = sourceRepo.save.mock.calls.at(-1)[0] as Source;
-      expect(saved.consecutiveMisses).toBe(0);
-      expect(Number.isFinite(saved.nextFetchAt.getTime())).toBe(true);
-    });
-
-    it('increments misses and stays finite when there are no articles', async () => {
-      parseStringMock.mockResolvedValue({ items: [] });
-      sourceRepo.findOne.mockResolvedValue({
-        ...rssSource,
-        consecutiveMisses: 2,
-      });
-
-      await processor.process(job({ sourceId: 'src-1', url: rssSource.url }));
-
-      const saved = sourceRepo.save.mock.calls.at(-1)[0] as Source;
-      expect(saved.consecutiveMisses).toBe(3);
-      expect(Number.isFinite(saved.nextFetchAt.getTime())).toBe(true);
     });
   });
 

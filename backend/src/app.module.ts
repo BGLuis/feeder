@@ -38,6 +38,10 @@ import { envValidationSchema } from './config/env.validation';
         // Auto-DDL only outside production; prod needs a real migration workflow.
         synchronize:
           configService.get<string>('NODE_ENV', 'development') !== 'production',
+        migrationsRun:
+          configService.get<string>('NODE_ENV', 'development') === 'production',
+        migrations: [__dirname + '/migrations/*{.ts,.js}'],
+        timezone: 'Z',
         maxQueryExecutionTime: 5_000,
         extra: { connectionLimit: 10 },
       }),

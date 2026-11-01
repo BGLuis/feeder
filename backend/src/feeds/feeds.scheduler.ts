@@ -1,14 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThanOrEqual, IsNull } from 'typeorm';
+import { Repository } from 'typeorm';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { Source } from './entities/source.entity';
 
+export const DEFAULT_SCHEDULER_BATCH_SIZE = 100;
+
 @Injectable()
 export class FeedsScheduler {
   private readonly logger = new Logger(FeedsScheduler.name);
+  batchSize: number = DEFAULT_SCHEDULER_BATCH_SIZE;
 
   constructor(
     @InjectRepository(Source) private sourceRepository: Repository<Source>,
@@ -20,10 +23,14 @@ export class FeedsScheduler {
     this.logger.log('Running Master Scheduler for Feeds...');
     const now = new Date();
 
-    // Fetch sources that need fetching
-    const sourcesToFetch = await this.sourceRepository.find({
-      where: [{ nextFetchAt: LessThanOrEqual(now) }, { nextFetchAt: IsNull() }],
-    });
+    // Fetch sources that have at least one subscription and need fetching
+    const sourcesToFetch = await this.sourceRepository
+      .createQueryBuilder('source')
+      .innerJoin('source.subscriptions', 'subscription')
+      .where('(source.nextFetchAt <= :now OR source.nextFetchAt IS NULL)', { now })
+      .distinct(true)
+      .take(this.batchSize)
+      .getMany();
 
     if (sourcesToFetch.length === 0) {
       this.logger.log('No feeds to schedule at this time.');
@@ -37,12 +44,26 @@ export class FeedsScheduler {
 
     for (let i = 0; i < sourcesToFetch.length; i++) {
       const source = sourcesToFetch[i];
+      const jobId = `sched:fetch:${source.id}`;
+
+      // If a previous job failed, remove it so BullMQ does not ignore the re-added job
+      const existingJob = await this.scraperQueue.getJob(jobId);
+      if (existingJob) {
+        const isFailed =
+          typeof existingJob.isFailed === 'function'
+            ? await existingJob.isFailed()
+            : (await existingJob.getState?.()) === 'failed';
+        if (isFailed) {
+          await existingJob.remove();
+        }
+      }
+
       // Deterministic jobId: if a previous run's job for this source is still
       // waiting/delayed, BullMQ ignores the duplicate instead of piling on.
       await this.scraperQueue.add(
         'fetch',
         { url: source.url, sourceId: source.id },
-        { delay: i * SPACING_MS, jobId: `sched:fetch:${source.id}` },
+        { delay: i * SPACING_MS, jobId },
       );
       this.logger.log(
         `Queued source ${source.id} (${source.url}) with delay ${i * SPACING_MS}ms`,

@@ -24,10 +24,13 @@ export interface FeedSubscription {
   };
 }
 
+import { API_BASE_URL } from '../api.token';
+
 @Injectable({ providedIn: 'root' })
 export class FeedsService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:3000/feeds';
+  private apiBaseUrl = inject(API_BASE_URL);
+  private apiUrl = `${this.apiBaseUrl}/feeds`;
 
   getSubscriptions() {
     return firstValueFrom(this.http.get<FeedSubscription[]>(this.apiUrl));

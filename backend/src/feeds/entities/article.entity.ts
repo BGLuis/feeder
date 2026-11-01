@@ -24,7 +24,7 @@ export class Article {
   @ManyToOne(() => Source, (source) => source.articles, { onDelete: 'CASCADE' })
   source: Relation<Source>;
 
-  @Column()
+  @Column({ length: 512 })
   title: string;
 
   @Column({ length: 700 })

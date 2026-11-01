@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { Job, Queue } from 'bullmq';
 import Parser = require('rss-parser');
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Browser, chromium } from 'playwright';
 import { Article } from '../feeds/entities/article.entity';
 import { Source, SourceType } from '../feeds/entities/source.entity';
@@ -317,14 +317,33 @@ export class ScraperProcessor extends WorkerHost implements OnModuleDestroy {
       const newArticles = await work;
       await this.dispatchWebhooks(newArticles, source);
       await this.calculateNextFetch(source, newArticles.length > 0);
+      if (source.lastError) {
+        source.lastError = null;
+        source.lastErrorAt = null;
+        await this.sourceRepository.update(source.id, {
+          lastError: null,
+          lastErrorAt: null,
+        });
+      }
       return { newArticles: newArticles.length };
     } catch (error) {
+      const errorMessage = timedOut
+        ? `Job ${job.id} timed out after ${JOB_TIMEOUT_MS}ms`
+        : error instanceof Error
+          ? error.message
+          : String(error);
+
       if (timedOut) {
-        const msg = `Job ${job.id} timed out after ${JOB_TIMEOUT_MS}ms`;
-        this.logger.error(msg);
-        throw new Error(msg);
+        this.logger.error(errorMessage);
+      } else {
+        this.logger.error(`Error scraping ${job.data.url}`, error as Error);
       }
-      this.logger.error(`Error scraping ${job.data.url}`, error as Error);
+
+      await this.handleFetchFailure(source, errorMessage);
+
+      if (timedOut) {
+        throw new Error(errorMessage);
+      }
       throw error;
     } finally {
       clearTimeout(timer);
@@ -372,12 +391,40 @@ export class ScraperProcessor extends WorkerHost implements OnModuleDestroy {
 
     const created: Article[] = [];
     let ogBudget = OG_FETCH_MAX;
-    for (const item of feed.items) {
+    const items = (feed.items || []).slice(0, MAX_ITEMS);
+
+    const links = items
+      .map((i) => i.link)
+      .filter(
+        (link): link is string =>
+          typeof link === 'string' && link.length > 0 && link.length <= 700,
+      );
+
+    const existingArticles =
+      links.length > 0
+        ? await this.articleRepository.find({
+            where: {
+              url: In(links),
+              source: { id: source.id },
+            },
+            select: ['url'],
+          })
+        : [];
+    const existingUrls = new Set(existingArticles.map((a) => a.url));
+
+    for (const item of items) {
+      if (signal.aborted) {
+        this.logger.warn(`RSS fetch for ${source.url} aborted`);
+        break;
+      }
       if (!item.link) continue;
-      const exists = await this.articleRepository.findOne({
-        where: { url: item.link, source: { id: source.id } },
-      });
-      if (exists) continue;
+      if (item.link.length > 700) {
+        this.logger.warn(
+          `Skipping item with link exceeding 700 characters (${item.link.length}): ${item.link.slice(0, 100)}`,
+        );
+        continue;
+      }
+      if (existingUrls.has(item.link)) continue;
 
       const anyItem = item as any;
       let ytDescription = '';
@@ -419,11 +466,16 @@ export class ScraperProcessor extends WorkerHost implements OnModuleDestroy {
       }
       article.imageUrl = imageUrl;
 
+      const now = new Date();
       const parsedDate = item.pubDate ? new Date(item.pubDate) : null;
-      article.publishedAt =
+      let publishedAt =
         parsedDate && Number.isFinite(parsedDate.getTime())
           ? parsedDate
-          : new Date();
+          : now;
+      if (publishedAt > now) {
+        publishedAt = now;
+      }
+      article.publishedAt = publishedAt;
       article.source = source;
 
       const saved = await this.saveArticle(article, source);
@@ -431,7 +483,7 @@ export class ScraperProcessor extends WorkerHost implements OnModuleDestroy {
     }
 
     this.logger.log(
-      `RSS ${source.url}: ${created.length} new of ${feed.items.length} items`,
+      `RSS ${source.url}: ${created.length} new of ${items.length} items`,
     );
     return created;
   }
@@ -465,15 +517,25 @@ export class ScraperProcessor extends WorkerHost implements OnModuleDestroy {
   ): Promise<Article[]> {
     const useScript = Boolean(source.selectors?.script);
 
-    // Only non-script modes get the authenticated session; arbitrary JS never does.
+    // Only private sources in non-script modes get the authenticated session;
+    // public sources never get a storage state, and arbitrary JS never does.
     let storageState: any;
-    if (!useScript && job.data.authStorageState) {
-      try {
-        storageState = JSON.parse(decryptSecret(job.data.authStorageState));
-      } catch (e) {
-        this.logger.warn(
-          `Ignoring unreadable authStorageState for job ${job.id}: ${(e as Error).message}`,
-        );
+    if (source.isPrivate && !useScript) {
+      let rawState = job.data.authStorageState;
+      if (!rawState) {
+        const sub = await this.subscriptionRepository.findOne({
+          where: { source: { id: source.id } },
+        });
+        rawState = sub?.authStorageState;
+      }
+      if (rawState) {
+        try {
+          storageState = JSON.parse(decryptSecret(rawState));
+        } catch (e) {
+          this.logger.warn(
+            `Ignoring unreadable authStorageState for job ${job.id}: ${(e as Error).message}`,
+          );
+        }
       }
     }
 
@@ -890,6 +952,20 @@ export class ScraperProcessor extends WorkerHost implements OnModuleDestroy {
       ? 0
       : (source.consecutiveMisses || 0) + 1;
 
+    const delayMs = await this.computeBackoffDelay(source);
+    source.nextFetchAt = new Date(now.getTime() + delayMs);
+
+    await this.sourceRepository.update(source.id, {
+      lastFetchAt: source.lastFetchAt,
+      consecutiveMisses: source.consecutiveMisses,
+      nextFetchAt: source.nextFetchAt,
+    });
+    this.logger.log(
+      `Source ${source.id} next fetch at ${source.nextFetchAt.toISOString()} (misses: ${source.consecutiveMisses})`,
+    );
+  }
+
+  private async computeBackoffDelay(source: Source): Promise<number> {
     const lastArticles = await this.articleRepository.find({
       where: { source: { id: source.id } },
       order: { publishedAt: 'DESC' },
@@ -916,12 +992,24 @@ export class ScraperProcessor extends WorkerHost implements OnModuleDestroy {
 
     let delayMs = baseMs * backoff;
     if (!Number.isFinite(delayMs) || delayMs <= 0) delayMs = 24 * HOUR_MS;
-    delayMs = Math.min(delayMs, MAX_DELAY_MS);
+    return Math.min(delayMs, MAX_DELAY_MS);
+  }
 
+  private async handleFetchFailure(source: Source, errorMessage: string) {
+    const now = new Date();
+    source.lastFetchAt = now;
+    source.consecutiveMisses = (source.consecutiveMisses || 0) + 1;
+    source.lastError = errorMessage;
+    source.lastErrorAt = now;
+
+    const delayMs = await this.computeBackoffDelay(source);
     source.nextFetchAt = new Date(now.getTime() + delayMs);
-    await this.sourceRepository.save(source);
-    this.logger.log(
-      `Source ${source.id} next fetch at ${source.nextFetchAt.toISOString()} (misses: ${source.consecutiveMisses})`,
-    );
+
+    await this.sourceRepository.update(source.id, {
+      nextFetchAt: source.nextFetchAt,
+      consecutiveMisses: source.consecutiveMisses,
+      lastError: source.lastError,
+      lastErrorAt: source.lastErrorAt,
+    });
   }
 }

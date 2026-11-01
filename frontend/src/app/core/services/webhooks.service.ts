@@ -11,12 +11,15 @@ export interface Webhook {
   payloadTemplate: string | null;
 }
 
+import { API_BASE_URL } from '../api.token';
+
 @Injectable({
   providedIn: 'root'
 })
 export class WebhooksService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:3000/webhooks';
+  private apiBaseUrl = inject(API_BASE_URL);
+  private apiUrl = `${this.apiBaseUrl}/webhooks`;
 
   webhooks = signal<Webhook[]>([]);
 
