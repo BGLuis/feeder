@@ -95,6 +95,50 @@ describe('FeedsScheduler', () => {
     );
   });
 
+  it('asserts that a source whose previous job completed is enqueued again on the next run', async () => {
+    const source = { id: 'src-completed', url: 'https://completed.example/feed' };
+    qb.getMany.mockResolvedValueOnce([source]);
+
+    const completedJob = {
+      id: 'sched:fetch:src-completed',
+      isCompleted: jest.fn().mockResolvedValue(true),
+      remove: jest.fn().mockResolvedValue(undefined),
+    };
+    scraperQueue.getJob.mockResolvedValueOnce(completedJob);
+
+    await scheduler.scheduleFeeds();
+
+    expect(completedJob.remove).toHaveBeenCalled();
+    expect(scraperQueue.add).toHaveBeenCalledWith(
+      'fetch',
+      { url: source.url, sourceId: source.id },
+      expect.objectContaining({ jobId: 'sched:fetch:src-completed' }),
+    );
+  });
+
+  it('does not remove an active or waiting job to deduplicate in-flight runs', async () => {
+    const source = { id: 'src-active', url: 'https://active.example/feed' };
+    qb.getMany.mockResolvedValueOnce([source]);
+
+    const activeJob = {
+      id: 'sched:fetch:src-active',
+      isFailed: jest.fn().mockResolvedValue(false),
+      isCompleted: jest.fn().mockResolvedValue(false),
+      getState: jest.fn().mockResolvedValue('active'),
+      remove: jest.fn().mockResolvedValue(undefined),
+    };
+    scraperQueue.getJob.mockResolvedValueOnce(activeJob);
+
+    await scheduler.scheduleFeeds();
+
+    expect(activeJob.remove).not.toHaveBeenCalled();
+    expect(scraperQueue.add).toHaveBeenCalledWith(
+      'fetch',
+      { url: source.url, sourceId: source.id },
+      expect.objectContaining({ jobId: 'sched:fetch:src-active' }),
+    );
+  });
+
   it('asserts that the scheduler job data still contains no authStorageState', async () => {
     const source = { id: 'src-private', url: 'https://private.example/feed' };
     qb.getMany.mockResolvedValueOnce([source]);

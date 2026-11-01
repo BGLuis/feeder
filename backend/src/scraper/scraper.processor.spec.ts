@@ -213,6 +213,35 @@ describe('ScraperProcessor', () => {
         lastErrorAt: null,
       });
     });
+
+    it('times out after JOB_TIMEOUT_MS when work hangs, stores lastError, and rejects', async () => {
+      jest.useFakeTimers();
+      try {
+        jest
+          .spyOn(processor as any, 'run')
+          .mockImplementation(() => new Promise(() => {}));
+
+        const promise = processor.process(
+          job({ sourceId: 'src-1', url: rssSource.url }),
+        );
+        promise.catch(() => undefined);
+
+        await jest.advanceTimersByTimeAsync(90_001);
+
+        await expect(promise).rejects.toThrow(/timed out after 90000ms/);
+
+        expect(sourceRepo.update).toHaveBeenCalledWith(
+          'src-1',
+          expect.objectContaining({
+            lastError: expect.stringContaining('timed out after 90000ms'),
+            lastErrorAt: expect.any(Date),
+            nextFetchAt: expect.any(Date),
+          }),
+        );
+      } finally {
+        jest.useRealTimers();
+      }
+    });
   });
 
   describe('issue #6: private feed authentication', () => {
@@ -338,6 +367,18 @@ describe('ScraperProcessor', () => {
       const saved = articleRepo.save.mock.calls[0][0] as Article;
       expect(saved.url).toBe('https://feed.example/normal');
       expect(res).toEqual({ newArticles: 1 });
+    });
+
+    it('saveArticle defensively skips an article with URL > 700 chars without calling repository save', async () => {
+      const longUrl = 'https://site.example/' + 'y'.repeat(700);
+      const article = new Article();
+      article.url = longUrl;
+      article.title = 'Defensive test';
+
+      const result = await (processor as any).saveArticle(article, rssSource);
+
+      expect(result).toBeNull();
+      expect(articleRepo.save).not.toHaveBeenCalled();
     });
   });
 

@@ -70,6 +70,7 @@ export class FeedsService {
     } catch (err: any) {
       if (
         err?.code === 'ER_DUP_ENTRY' ||
+        err?.errno === 1062 ||
         (err?.name === 'QueryFailedError' && String(err).includes('Duplicate entry'))
       ) {
         throw new ConflictException('Already subscribed to this source');
@@ -90,7 +91,8 @@ export class FeedsService {
   }
 
   async getArticles(userId: string, query: ListArticlesQueryDto = {}) {
-    const { tag, search } = query;
+    const tag = query.tag?.trim();
+    const search = query.search?.trim();
     const page = Math.max(1, query.page ?? 1);
     const limit = Math.min(100, Math.max(1, query.limit ?? 50));
 

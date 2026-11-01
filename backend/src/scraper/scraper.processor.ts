@@ -302,10 +302,14 @@ export class ScraperProcessor extends WorkerHost implements OnModuleDestroy {
     // in-flight Playwright/HTTP work is torn down.
     const ac = new AbortController();
     let timedOut = false;
-    const timer = setTimeout(() => {
-      timedOut = true;
-      ac.abort();
-    }, JOB_TIMEOUT_MS);
+    let timer: NodeJS.Timeout | undefined;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => {
+        timedOut = true;
+        ac.abort();
+        reject(new Error(`Job ${job.id} timed out after ${JOB_TIMEOUT_MS}ms`));
+      }, JOB_TIMEOUT_MS);
+    });
 
     // The work promise MUST always carry a handler: once a timeout has been
     // reported to BullMQ, a later rejection here would otherwise crash the
@@ -314,7 +318,10 @@ export class ScraperProcessor extends WorkerHost implements OnModuleDestroy {
     work.catch(() => undefined);
 
     try {
-      const newArticles = await work;
+      const newArticles = await Promise.race([work, timeoutPromise]);
+      if (timedOut) {
+        throw new Error(`Job ${job.id} timed out after ${JOB_TIMEOUT_MS}ms`);
+      }
       await this.dispatchWebhooks(newArticles, source);
       await this.calculateNextFetch(source, newArticles.length > 0);
       if (source.lastError) {
@@ -346,7 +353,7 @@ export class ScraperProcessor extends WorkerHost implements OnModuleDestroy {
       }
       throw error;
     } finally {
-      clearTimeout(timer);
+      if (timer) clearTimeout(timer);
     }
   }
 
@@ -477,6 +484,11 @@ export class ScraperProcessor extends WorkerHost implements OnModuleDestroy {
       }
       article.publishedAt = publishedAt;
       article.source = source;
+
+      if (signal.aborted) {
+        this.logger.warn(`RSS fetch for ${source.url} aborted before save`);
+        break;
+      }
 
       const saved = await this.saveArticle(article, source);
       if (saved) created.push(saved);
@@ -626,6 +638,12 @@ export class ScraperProcessor extends WorkerHost implements OnModuleDestroy {
       }
       const itemUrl = resolveMaybeRelative(item.url, origin);
       if (!itemUrl || !isHttpUrl(itemUrl)) continue;
+      if (itemUrl.length > 700) {
+        this.logger.warn(
+          `Skipping item with link exceeding 700 characters (${itemUrl.length}): ${itemUrl.slice(0, 100)}`,
+        );
+        continue;
+      }
 
       if (await this.isDuplicate(itemUrl, source)) continue;
 
@@ -684,7 +702,14 @@ export class ScraperProcessor extends WorkerHost implements OnModuleDestroy {
         if (im) image = sanitizeImageUrl(await this.readImageAttr(im), origin);
       }
 
-      if (!isHttpUrl(itemUrl) || (await this.isDuplicate(itemUrl, source))) {
+      if (!isHttpUrl(itemUrl)) continue;
+      if (itemUrl.length > 700) {
+        this.logger.warn(
+          `Skipping item with link exceeding 700 characters (${itemUrl.length}): ${itemUrl.slice(0, 100)}`,
+        );
+        continue;
+      }
+      if (await this.isDuplicate(itemUrl, source)) {
         continue;
       }
 
@@ -743,7 +768,14 @@ export class ScraperProcessor extends WorkerHost implements OnModuleDestroy {
         image = sanitizeImageUrl(await og.getAttribute('content'), origin);
     }
 
-    if (!isHttpUrl(itemUrl) || (await this.isDuplicate(itemUrl, source))) {
+    if (!isHttpUrl(itemUrl)) return [];
+    if (itemUrl.length > 700) {
+      this.logger.warn(
+        `Skipping item with link exceeding 700 characters (${itemUrl.length}): ${itemUrl.slice(0, 100)}`,
+      );
+      return [];
+    }
+    if (await this.isDuplicate(itemUrl, source)) {
       return [];
     }
 
@@ -826,6 +858,7 @@ export class ScraperProcessor extends WorkerHost implements OnModuleDestroy {
   }
 
   private async isDuplicate(url: string, source: Source): Promise<boolean> {
+    if (url.length > 700) return true;
     const existing = await this.articleRepository.findOne({
       where: { url, source: { id: source.id } },
     });
@@ -837,6 +870,12 @@ export class ScraperProcessor extends WorkerHost implements OnModuleDestroy {
     article: Article,
     source: Source,
   ): Promise<Article | null> {
+    if (article.url && article.url.length > 700) {
+      this.logger.warn(
+        `Skipping article with URL exceeding 700 characters (${article.url.length}): ${article.url.slice(0, 100)}`,
+      );
+      return null;
+    }
     try {
       return await this.articleRepository.save(article);
     } catch (e: any) {

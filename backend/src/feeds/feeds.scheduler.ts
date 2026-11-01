@@ -46,14 +46,28 @@ export class FeedsScheduler {
       const source = sourcesToFetch[i];
       const jobId = `sched:fetch:${source.id}`;
 
-      // If a previous job failed, remove it so BullMQ does not ignore the re-added job
+      // If a previous job is finished (completed or failed), remove it so BullMQ does not ignore the re-added job.
+      // Active / delayed / waiting jobs are preserved to deduplicate in-flight runs.
       const existingJob = await this.scraperQueue.getJob(jobId);
       if (existingJob) {
         const isFailed =
           typeof existingJob.isFailed === 'function'
             ? await existingJob.isFailed()
-            : (await existingJob.getState?.()) === 'failed';
-        if (isFailed) {
+            : false;
+        const isCompleted =
+          typeof existingJob.isCompleted === 'function'
+            ? await existingJob.isCompleted()
+            : false;
+        const state =
+          typeof existingJob.getState === 'function'
+            ? await existingJob.getState()
+            : undefined;
+        const isFinished =
+          isFailed ||
+          isCompleted ||
+          state === 'failed' ||
+          state === 'completed';
+        if (isFinished) {
           await existingJob.remove();
         }
       }
