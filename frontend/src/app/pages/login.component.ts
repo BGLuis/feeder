@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthLayoutComponent } from '../ui/templates/auth-layout.component';
 import { LucideFingerprint } from '@lucide/angular';
 import { AuthService } from '../core/auth.service';
@@ -34,11 +34,12 @@ import { AlertComponent } from '../ui/molecules/alert.component';
               </p>
             </div>
 
-            <div class="space-y-5">
+            <form (ngSubmit)="onLogin()" class="space-y-5">
               <div class="space-y-1.5 text-left">
                 <label class="text-label text-text-primary block">Email</label>
                 <input
                   type="email"
+                  name="email"
                   placeholder="name@example.com"
                   [ngModel]="email()"
                   (ngModelChange)="email.set($event)"
@@ -50,6 +51,7 @@ import { AlertComponent } from '../ui/molecules/alert.component';
                 <label class="text-label text-text-primary block">Password</label>
                 <input
                   type="password"
+                  name="password"
                   placeholder="••••••••"
                   [ngModel]="password()"
                   (ngModelChange)="password.set($event)"
@@ -63,7 +65,7 @@ import { AlertComponent } from '../ui/molecules/alert.component';
 
               <div class="pt-2">
                 <app-button
-                  (click)="onLogin()"
+                  type="submit"
                   [disabled]="loading()"
                   variant="primary"
                   size="lg"
@@ -77,7 +79,7 @@ import { AlertComponent } from '../ui/molecules/alert.component';
                   Sign In
                 </app-button>
               </div>
-            </div>
+            </form>
 
             <div class="my-6 flex items-center gap-4">
               <div class="h-px bg-border-subtle flex-1"></div>
@@ -113,6 +115,7 @@ import { AlertComponent } from '../ui/molecules/alert.component';
 export class LoginComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   email = signal('');
   password = signal('');
@@ -124,7 +127,8 @@ export class LoginComponent {
     this.loading.set(true);
     try {
       await this.authService.login(this.email(), this.password());
-      this.router.navigate(['/']);
+      const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
+      this.router.navigateByUrl(returnUrl);
     } catch (err) {
       this.errorMessage.set('Invalid credentials. Please try again.');
     } finally {

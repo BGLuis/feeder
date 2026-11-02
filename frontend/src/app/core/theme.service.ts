@@ -1,7 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ThemeService {
   isDarkMode = signal<boolean>(false);
@@ -14,17 +14,13 @@ export class ThemeService {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('theme');
       if (stored === 'light') {
-        this.setLightTheme();
+        this.applyTheme(false);
       } else if (stored === 'dark') {
-        this.setDarkTheme();
+        this.applyTheme(true);
       } else {
-        // Check system preference
+        // Check system preference without writing to localStorage
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (prefersDark) {
-          this.setDarkTheme();
-        } else {
-          this.setLightTheme();
-        }
+        this.applyTheme(prefersDark);
       }
     }
   }
@@ -37,18 +33,27 @@ export class ThemeService {
     }
   }
 
-  setDarkTheme() {
-    this.isDarkMode.set(true);
+  private applyTheme(dark: boolean) {
+    this.isDarkMode.set(dark);
     if (typeof window !== 'undefined') {
-      document.documentElement.classList.add('dark');
+      if (dark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }
+  }
+
+  setDarkTheme() {
+    this.applyTheme(true);
+    if (typeof window !== 'undefined') {
       localStorage.setItem('theme', 'dark');
     }
   }
 
   setLightTheme() {
-    this.isDarkMode.set(false);
+    this.applyTheme(false);
     if (typeof window !== 'undefined') {
-      document.documentElement.classList.remove('dark');
       localStorage.setItem('theme', 'light');
     }
   }

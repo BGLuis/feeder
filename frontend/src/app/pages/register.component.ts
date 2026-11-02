@@ -32,11 +32,12 @@ import { AlertComponent } from '../ui/molecules/alert.component';
               </p>
             </div>
 
-            <div class="space-y-5">
+            <form (ngSubmit)="onRegister()" class="space-y-5">
               <div class="space-y-1.5 text-left">
                 <label class="text-label text-text-primary block">Email</label>
                 <input
                   type="email"
+                  name="email"
                   placeholder="name@example.com"
                   [ngModel]="email()"
                   (ngModelChange)="email.set($event)"
@@ -48,6 +49,7 @@ import { AlertComponent } from '../ui/molecules/alert.component';
                 <label class="text-label text-text-primary block">Password</label>
                 <input
                   type="password"
+                  name="password"
                   placeholder="••••••••"
                   [ngModel]="password()"
                   (ngModelChange)="password.set($event)"
@@ -61,7 +63,7 @@ import { AlertComponent } from '../ui/molecules/alert.component';
 
               <div class="pt-2">
                 <app-button
-                  (click)="onRegister()"
+                  type="submit"
                   [disabled]="loading() || !email() || !password()"
                   variant="primary"
                   size="lg"
@@ -75,7 +77,7 @@ import { AlertComponent } from '../ui/molecules/alert.component';
                   Sign Up
                 </app-button>
               </div>
-            </div>
+            </form>
 
             <p class="text-center text-body-sm text-text-secondary mt-8">
               Already have an account?
