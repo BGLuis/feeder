@@ -14,7 +14,6 @@ import {
   inject
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import loader from '@monaco-editor/loader';
 import { ThemeService } from '../../core/theme.service';
 
 export interface CodeTemplate {
@@ -93,6 +92,7 @@ export class CodeEditorComponent implements OnInit, OnDestroy, OnChanges {
 
   async initMonaco() {
     try {
+      const loader = (await import('@monaco-editor/loader')).default;
       const monaco = await loader.init();
       this.monaco = monaco;
       
