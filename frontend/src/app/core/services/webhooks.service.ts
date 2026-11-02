@@ -19,11 +19,22 @@ export class WebhooksService {
   private apiUrl = 'http://localhost:3000/webhooks';
 
   webhooks = signal<Webhook[]>([]);
+  error = signal<string | null>(null);
+  loading = signal<boolean>(false);
 
   async loadWebhooks() {
+    this.loading.set(true);
+    this.error.set(null);
     this.http.get<Webhook[]>(this.apiUrl).subscribe({
-      next: (data) => this.webhooks.set(data),
-      error: (err) => console.error('Error loading webhooks', err)
+      next: (data) => {
+        this.webhooks.set(data || []);
+        this.loading.set(false);
+      },
+      error: (err) => {
+        console.error('Error loading webhooks', err);
+        this.error.set(err?.message || 'Error loading webhooks');
+        this.loading.set(false);
+      }
     });
   }
 

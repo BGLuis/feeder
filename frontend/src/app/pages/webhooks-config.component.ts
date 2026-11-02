@@ -42,7 +42,15 @@ import { LucideWebhook, LucidePlus } from '@lucide/angular';
       </div>
 
       <div class="flex flex-col gap-4">
-        @if (webhooksService.webhooks().length === 0 && !showForm()) {
+        @if (webhooksService.error() && !showForm()) {
+          <app-alert tone="danger" title="Error loading webhooks" [description]="webhooksService.error()!">
+            <div class="mt-3">
+              <app-button (click)="webhooksService.loadWebhooks()" variant="secondary" size="sm">
+                Retry
+              </app-button>
+            </div>
+          </app-alert>
+        } @else if (webhooksService.webhooks().length === 0 && !showForm()) {
           <app-empty-state
             title="No webhooks yet"
             description="Configure external endpoints to receive real-time notifications on new articles."
