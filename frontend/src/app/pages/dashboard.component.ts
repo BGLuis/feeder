@@ -20,6 +20,7 @@ import { SearchFieldComponent } from '../ui/atoms/search-field.component';
 import { ChipComponent } from '../ui/atoms/chip.component';
 import { TagComponent } from '../ui/atoms/tag.component';
 import { ButtonComponent } from '../ui/atoms/button.component';
+import { AlertComponent } from '../ui/molecules/alert.component';
 import { ModalComponent } from '../ui/organisms/modal.component';
 import { CodeEditorComponent, CodeTemplate } from '../ui/atoms/code-editor.component';
 
@@ -38,6 +39,7 @@ import { CodeEditorComponent, CodeTemplate } from '../ui/atoms/code-editor.compo
     ChipComponent,
     TagComponent,
     ButtonComponent,
+    AlertComponent,
     ModalComponent,
     CodeEditorComponent,
   ],
@@ -127,13 +129,21 @@ import { CodeEditorComponent, CodeTemplate } from '../ui/atoms/code-editor.compo
             </div>
           }
 
-          <!-- Content: Skeleton / Empty / List -->
+          <!-- Content: Skeleton / Error / Empty / List -->
           @if (loading()) {
             <div class="space-y-3">
               <app-skeleton variant="row"></app-skeleton>
               <app-skeleton variant="row"></app-skeleton>
               <app-skeleton variant="row"></app-skeleton>
             </div>
+          } @else if (error()) {
+            <app-alert tone="danger" title="Error loading feeds" [description]="error()!">
+              <div class="mt-3">
+                <app-button variant="secondary" size="sm" (click)="loadFeeds()">
+                  Retry
+                </app-button>
+              </div>
+            </app-alert>
           } @else if (feeds().length === 0) {
             <app-empty-state
               title="No feeds yet"
@@ -287,6 +297,7 @@ export class DashboardComponent implements OnInit {
 
   feeds = signal<FeedSubscription[]>([]);
   loading = signal(true);
+  error = signal<string | null>(null);
   selectedTag = signal<string | null>(null);
   searchQuery = signal('');
 
@@ -384,11 +395,13 @@ export class DashboardComponent implements OnInit {
 
   async loadFeeds() {
     this.loading.set(true);
+    this.error.set(null);
     try {
       const data = await this.feedsService.getSubscriptions();
       this.feeds.set(data || []);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Falha ao carregar feeds', err);
+      this.error.set(err?.message || (typeof err === 'string' ? err : 'Falha ao carregar feeds'));
       this.feeds.set([]);
     } finally {
       this.loading.set(false);
