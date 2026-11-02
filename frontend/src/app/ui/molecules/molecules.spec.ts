@@ -9,6 +9,7 @@ import { SkeletonComponent } from './skeleton.component';
 import { SubscriptionRowComponent } from './subscription-row.component';
 import { WebhookRowComponent } from './webhook-row.component';
 import { provideRouter } from '@angular/router';
+import { provideTranslateService, TranslateService } from '@ngx-translate/core';
 
 @Component({
   imports: [
@@ -78,8 +79,24 @@ class TestHostComponent {
 describe('molecules', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), provideTranslateService({ lang: 'pt' })],
     }).compileComponents();
+  });
+
+  it('article-card renders its relative time with Intl.RelativeTimeFormat in the current language (pt)', () => {
+    const fixture = TestBed.createComponent(TestHostComponent);
+    const translate = TestBed.inject(TranslateService);
+    translate.use('pt');
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+    fixture.componentInstance.mockArticle = {
+      ...fixture.componentInstance.mockArticle,
+      publishedAt: twoHoursAgo,
+    };
+    fixture.detectChanges();
+
+    const timeEl = fixture.nativeElement.querySelector('app-article-card time');
+    expect(timeEl).toBeTruthy();
+    expect(timeEl.textContent?.trim()).toContain('2 horas');
   });
 
   it('article-card shows emerald accent bar when unread, and changes text style when read', () => {

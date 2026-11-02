@@ -35,5 +35,16 @@
     "DARK": "Oscuro",
     "LIGHT": "Claro",
     "FINISH": "Finalizar Configuración"
+  },
+  "ARTICLE": {
+    "SAVE": "Guardar artículo",
+    "REMOVE_SAVED": "Quitar de guardados",
+    "MARK_READ": "Marcar como leído",
+    "MARK_UNREAD": "Marcar como no leído",
+    "OPEN_EXTERNAL": "Abrir enlace externo"
+  },
+  "AUTH": {
+    "SIGN_IN": "Iniciar sesión",
+    "SIGN_UP": "Registrarse"
   }
 }
