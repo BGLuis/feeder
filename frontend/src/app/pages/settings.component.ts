@@ -2,7 +2,6 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../core/auth.service';
-import { CodeEditorComponent, CodeTemplate } from '../ui/atoms/code-editor.component';
 import { WebhooksConfigComponent } from './webhooks-config.component';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { ThemeService } from '../core/theme.service';
@@ -17,7 +16,6 @@ import {
   LucideUser,
   LucideShieldCheck,
   LucideSliders,
-  LucideCode,
   LucideServer,
   LucideKeyRound,
   LucideArrowRight,
@@ -29,7 +27,6 @@ import {
   imports: [
     ReactiveFormsModule,
     RouterLink,
-    CodeEditorComponent,
     WebhooksConfigComponent,
     TranslatePipe,
     PageHeaderComponent,
@@ -42,7 +39,6 @@ import {
     LucideUser,
     LucideShieldCheck,
     LucideSliders,
-    LucideCode,
     LucideServer,
     LucideKeyRound,
     LucideArrowRight,
@@ -227,29 +223,6 @@ import {
               </div>
             </section>
           }
-
-          <!-- Advanced JSON Config Section -->
-          <section
-            class="bg-bg-surface rounded-2xl shadow-elevation-1 border border-border-default p-6 sm:p-8"
-          >
-            <h2 class="text-heading-h2 font-medium text-text-primary mb-2 flex items-center gap-2.5">
-              <svg lucideCode class="w-5 h-5 text-icon-secondary"></svg>
-              <span>Advanced Configuration (JSON)</span>
-            </h2>
-            <p class="text-body-sm text-text-secondary mb-6">
-              Use the editor below to safely build your custom JSON configurations. You can use
-              ready-made templates to start quickly without formatting errors.
-            </p>
-
-            <app-code-editor
-              title="Custom JSON Data"
-              language="json"
-              height="300px"
-              [code]="customConfigCode"
-              [templates]="jsonTemplates"
-              (codeChange)="onCodeChange($event)"
-            ></app-code-editor>
-          </section>
         </div>
       </div>
   `,
@@ -274,27 +247,6 @@ export class SettingsComponent {
     name: [this.authService.currentUser()?.name || ''],
     email: [this.authService.currentUser()?.email || '', [Validators.required, Validators.email]],
   });
-
-  customConfigCode = '{\n  "feature_flags": {\n    "new_dashboard": false\n  }\n}';
-
-  jsonTemplates: CodeTemplate[] = [
-    {
-      name: 'Configuração Básica',
-      code: '{\n  "theme": "dark",\n  "notifications": true\n}',
-    },
-    {
-      name: 'Integração de API',
-      code: '{\n  "api_endpoint": "https://api.example.com",\n  "timeout_ms": 5000,\n  "retries": 3,\n  "headers": {\n    "Authorization": "Bearer <TOKEN>"\n  }\n}',
-    },
-    {
-      name: 'Regras de Permissão (Roles)',
-      code: '{\n  "roles": [\n    {\n      "id": "admin",\n      "permissions": ["read", "write", "delete"]\n    },\n    {\n      "id": "viewer",\n      "permissions": ["read"]\n    }\n  ]\n}',
-    },
-  ];
-
-  onCodeChange(newCode: string) {
-    this.customConfigCode = newCode;
-  }
 
   onLangChange(lang: string) {
     this.translateService.use(lang);
