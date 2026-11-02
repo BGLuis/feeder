@@ -19,20 +19,8 @@
       "@common/*": [
         "src/common/*"
       ],
-      "@encryption/*": [
-        "src/encryption/*"
-      ],
       "@logging/*": [
         "src/logging/*"
-      ],
-      "@health/*": [
-        "src/health/*"
-      ],
-      "@config/*": [
-        "src/config/*"
-      ],
-      "@redis/*": [
-        "src/redis/*"
       ]
     },
     "outDir": "./dist",
