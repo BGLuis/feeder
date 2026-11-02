@@ -173,6 +173,21 @@ describe('molecules', () => {
     expect(fixture.componentInstance.feedRefreshed).toBe(true);
   });
 
+  it('subscription-row does not render external Google favicon and falls back to source-mark initial', () => {
+    const fixture = TestBed.createComponent(TestHostComponent);
+    fixture.detectChanges();
+
+    const row = fixture.nativeElement.querySelector('app-subscription-row') as HTMLElement;
+    const img = row.querySelector('app-source-mark img') as HTMLImageElement | null;
+    if (img) {
+      expect(img.src.startsWith(window.location.origin) || img.src.startsWith('/')).toBe(true);
+    } else {
+      expect(img).toBeNull();
+      const initialSpan = row.querySelector('app-source-mark span');
+      expect(initialSpan?.textContent?.trim()).toBe('C');
+    }
+  });
+
   it('webhook-row displays target url, active badge, and toggle switch', () => {
     const fixture = TestBed.createComponent(TestHostComponent);
     fixture.detectChanges();

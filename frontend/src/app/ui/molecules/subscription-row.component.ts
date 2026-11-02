@@ -111,16 +111,7 @@ export class SubscriptionRowComponent {
     return !misses || misses <= 0;
   });
 
-  faviconUrl = computed(() => {
-    const url = this.feed().source?.url;
-    if (!url) return null;
-    try {
-      const u = new URL(url);
-      return `https://www.google.com/s2/favicons?domain=${u.hostname}&sz=64`;
-    } catch {
-      return null;
-    }
-  });
+  faviconUrl = computed(() => null);
 
   nextFetchTime = computed(() => {
     const next = this.feed().source?.nextFetchAt;
