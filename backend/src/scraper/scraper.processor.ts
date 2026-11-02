@@ -358,10 +358,14 @@ export class ScraperProcessor extends WorkerHost implements OnModuleDestroy {
 		} catch (error) {
 			if (timedOut) {
 				// Wait briefly for in-flight abort to settle so saved articles can be harvested
+				let settleTimer: NodeJS.Timeout | undefined;
 				await Promise.race([
 					work.catch(() => undefined),
-					new Promise((resolve) => setTimeout(resolve, 2500)),
+					new Promise((resolve) => {
+						settleTimer = setTimeout(resolve, 2500);
+					}),
 				]);
+				if (settleTimer) clearTimeout(settleTimer);
 			}
 
 			// Dispatch webhooks for any articles saved before timeout or failure
@@ -394,7 +398,8 @@ export class ScraperProcessor extends WorkerHost implements OnModuleDestroy {
 			}
 
 			const attempts = job.opts?.attempts ?? 1;
-			const isFinalAttempt = job.attemptsMade + 1 >= attempts;
+			const attemptsMade = job.attemptsMade ?? 0;
+			const isFinalAttempt = attemptsMade + 1 >= attempts;
 			await this.handleFetchFailure(source, errorMessage, isFinalAttempt);
 
 			if (timedOut) {

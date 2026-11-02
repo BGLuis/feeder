@@ -63,7 +63,7 @@ export class FeedsScheduler {
 			if (existingJob) {
 				const state = await existingJob.getState();
 				if (state === 'completed' || state === 'failed') {
-					await existingJob.remove();
+					await existingJob.remove().catch(() => undefined);
 				}
 			}
 

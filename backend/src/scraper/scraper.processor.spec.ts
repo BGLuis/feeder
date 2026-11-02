@@ -334,6 +334,33 @@ describe('ScraperProcessor', () => {
 			});
 		});
 
+		it('treats undefined attemptsMade as attempt 0 and final when attempts is 1', async () => {
+			assertUrlAllowedMock.mockRejectedValueOnce(
+				new Error('single attempt outage'),
+			);
+			sourceRepo.findOne.mockResolvedValueOnce({
+				...rssSource,
+				consecutiveMisses: 0,
+			});
+
+			const jobWithoutAttemptsMade = {
+				id: 'j-no-attempts',
+				data: { sourceId: 'src-1', url: rssSource.url },
+				opts: { attempts: 1 },
+			} as unknown as Job<any, any, string>;
+
+			await expect(
+				processor.process(jobWithoutAttemptsMade),
+			).rejects.toThrow('single attempt outage');
+
+			expect(sourceRepo.update).toHaveBeenCalledWith('src-1', {
+				lastError: 'single attempt outage',
+				lastErrorAt: expect.any(Date),
+				consecutiveMisses: 1,
+				nextFetchAt: expect.any(Date),
+			});
+		});
+
 		it('dispatches webhooks for articles saved before a job timeout', async () => {
 			jest.useFakeTimers();
 			try {

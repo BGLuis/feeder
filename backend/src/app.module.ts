@@ -65,7 +65,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
 					// Auto-DDL only outside production; prod needs a real migration workflow.
 					synchronize: !isProduction,
 					migrationsRun: isProduction,
-					migrations: [__dirname + '/migrations/*{.ts,.js}'],
+					migrations: [`${__dirname}/migrations/*{.ts,.js}`],
 					timezone: 'Z',
 					maxQueryExecutionTime: 5_000,
 					extra: { connectionLimit: 10 },
