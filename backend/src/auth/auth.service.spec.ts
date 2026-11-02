@@ -18,6 +18,17 @@ jest.mock('ioredis', () => jest.fn().mockImplementation(() => redisMock));
 
 jest.mock('bcrypt', () => ({ hash: jest.fn(), compare: jest.fn() }));
 
+jest.mock('@simplewebauthn/server', () => ({
+  generateRegistrationOptions: jest
+    .fn()
+    .mockResolvedValue({ challenge: 'reg-challenge-123' }),
+  generateAuthenticationOptions: jest
+    .fn()
+    .mockResolvedValue({ challenge: 'auth-challenge-456' }),
+  verifyRegistrationResponse: jest.fn(),
+  verifyAuthenticationResponse: jest.fn(),
+}));
+
 describe('AuthService', () => {
   let service: AuthService;
   let userRepository: any;
@@ -154,6 +165,78 @@ describe('AuthService', () => {
       await expect(service.verifyPasskey('a@b.com', {})).rejects.toThrow(
         BadRequestException,
       );
+    });
+  });
+
+  describe('generatePasskeyOptions', () => {
+    it('creates new user and returns registration options when user does not exist', async () => {
+      userRepository.findOne.mockResolvedValueOnce(null);
+      userRepository.save.mockResolvedValueOnce({ id: 'u-1', email: 'new@example.com' });
+
+      const options = await service.generatePasskeyOptions('new@example.com', 'register');
+
+      expect(options).toEqual({ challenge: 'reg-challenge-123' });
+      expect(userRepository.save).toHaveBeenCalled();
+      expect(redisMock.set).toHaveBeenCalledWith(
+        'webauthn_challenge:new@example.com',
+        'reg-challenge-123',
+        'EX',
+        300,
+      );
+    });
+
+    it('returns authentication options when user exists with credentials', async () => {
+      userRepository.findOne.mockResolvedValueOnce({
+        id: 'u-1',
+        email: 'existing@example.com',
+        credentials: [{ credentialID: 'cred-1' }],
+      });
+
+      const options = await service.generatePasskeyOptions('existing@example.com', 'authenticate');
+
+      expect(options).toEqual({ challenge: 'auth-challenge-456' });
+      expect(redisMock.set).toHaveBeenCalledWith(
+        'webauthn_challenge:existing@example.com',
+        'auth-challenge-456',
+        'EX',
+        300,
+      );
+    });
+  });
+
+  describe('updateProfile', () => {
+    it('throws BadRequestException when user not found', async () => {
+      userRepository.findOne.mockResolvedValueOnce(null);
+
+      await expect(service.updateProfile('u-missing', 'New Name')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('throws BadRequestException when email is already in use by another user', async () => {
+      userRepository.findOne
+        .mockResolvedValueOnce({ id: 'u-1', email: 'current@example.com' })
+        .mockResolvedValueOnce({ id: 'u-2', email: 'taken@example.com' });
+
+      await expect(
+        service.updateProfile('u-1', 'Name', 'taken@example.com'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('updates name and email, saves and returns access_token', async () => {
+      const user = { id: 'u-1', name: 'Old', email: 'old@example.com' };
+      userRepository.findOne
+        .mockResolvedValueOnce(user)
+        .mockResolvedValueOnce(null); // email not taken
+      userRepository.save.mockResolvedValueOnce(user);
+
+      const result = await service.updateProfile('u-1', 'New', 'new@example.com');
+
+      expect(user.name).toBe('New');
+      expect(user.email).toBe('new@example.com');
+      expect(userRepository.save).toHaveBeenCalledWith(user);
+      expect(result.message).toBe('Profile updated successfully');
+      expect(result.access_token).toBe('token');
     });
   });
 });

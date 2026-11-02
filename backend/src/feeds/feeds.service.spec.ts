@@ -158,4 +158,51 @@ describe('FeedsService', () => {
       expect(articleQb.take).toHaveBeenCalledWith(100);
     });
   });
+
+  describe('refreshSubscription', () => {
+    it('throws when subscription is not found', async () => {
+      subscriptionRepository.findOne.mockResolvedValueOnce(null);
+
+      await expect(
+        service.refreshSubscription('user-1', 'sub-missing'),
+      ).rejects.toThrow('Subscription not found');
+    });
+
+    it('enqueues fetch when subscription is found and returns success', async () => {
+      const sub = {
+        id: 'sub-1',
+        authStorageState: 'enc-state',
+        source: { id: 'src-1', url: 'https://example.com/feed.xml' },
+      };
+      subscriptionRepository.findOne.mockResolvedValueOnce(sub);
+
+      const result = await service.refreshSubscription('user-1', 'sub-1');
+
+      expect(result).toEqual({ success: true });
+      expect(scraperQueue.add).toHaveBeenCalledWith(
+        'fetch',
+        expect.objectContaining({
+          sourceId: 'src-1',
+          url: 'https://example.com/feed.xml',
+          authStorageState: 'enc-state',
+        }),
+      );
+    });
+  });
+
+  describe('deleteSubscription', () => {
+    it('calls subscriptionRepository.delete with id and userId', async () => {
+      subscriptionRepository.delete = jest
+        .fn()
+        .mockResolvedValueOnce({ affected: 1 });
+
+      const result = await service.deleteSubscription('user-1', 'sub-1');
+
+      expect(subscriptionRepository.delete).toHaveBeenCalledWith({
+        id: 'sub-1',
+        user: { id: 'user-1' },
+      });
+      expect(result).toEqual({ affected: 1 });
+    });
+  });
 });
