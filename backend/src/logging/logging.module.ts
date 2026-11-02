@@ -106,7 +106,7 @@ const isProduction = process.env.NODE_ENV === 'production';
             url: req.url,
             query: req.query,
             params: req.params,
-            headers: pickHeaders(req.headers as Record<string, unknown>),
+            headers: pickHeaders(req.headers),
             body: redactBody(req.raw?.body || req.body),
             remoteAddress: req.remoteAddress,
             remotePort: req.remotePort,
@@ -132,7 +132,8 @@ const isProduction = process.env.NODE_ENV === 'production';
         },
         timestamp: () => `,"timestamp":"${new Date().toISOString()}"`,
         autoLogging: {
-          ignore: (req: IncomingMessage) => (req.url || '').startsWith('/health'),
+          ignore: (req: IncomingMessage) =>
+            (req.url || '').startsWith('/health'),
         },
       },
     }),
