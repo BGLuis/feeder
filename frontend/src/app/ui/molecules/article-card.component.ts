@@ -68,6 +68,7 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
             class="press p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
             [class.text-icon-accent]="isSaved()"
             [title]="isSaved() ? ('ARTICLE.REMOVE_SAVED' | translate) : ('ARTICLE.SAVE' | translate)"
+            [attr.aria-label]="isSaved() ? ('ARTICLE.REMOVE_SAVED' | translate) : ('ARTICLE.SAVE' | translate)"
           >
             <svg lucideBookmark class="w-4 h-4" [class.fill-current]="isSaved()"></svg>
           </button>
@@ -77,6 +78,7 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
             class="press p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
             [class.text-icon-accent]="isRead()"
             [title]="isRead() ? ('ARTICLE.MARK_UNREAD' | translate) : ('ARTICLE.MARK_READ' | translate)"
+            [attr.aria-label]="isRead() ? ('ARTICLE.MARK_UNREAD' | translate) : ('ARTICLE.MARK_READ' | translate)"
           >
             <svg lucideCheck class="w-4 h-4"></svg>
           </button>
@@ -87,6 +89,7 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
             (click)="onOpen($event)"
             class="press p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
             [title]="'ARTICLE.OPEN_EXTERNAL' | translate"
+            [attr.aria-label]="'ARTICLE.OPEN_EXTERNAL' | translate"
           >
             <svg lucideExternalLink class="w-4 h-4"></svg>
           </a>
@@ -124,6 +127,7 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
               class="press p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
               [class.text-icon-accent]="isSaved()"
               [title]="isSaved() ? ('ARTICLE.REMOVE_SAVED' | translate) : ('ARTICLE.SAVE' | translate)"
+              [attr.aria-label]="isSaved() ? ('ARTICLE.REMOVE_SAVED' | translate) : ('ARTICLE.SAVE' | translate)"
             >
               <svg lucideBookmark class="w-4 h-4" [class.fill-current]="isSaved()"></svg>
             </button>
@@ -133,6 +137,7 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
               class="press p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
               [class.text-icon-accent]="isRead()"
               [title]="isRead() ? ('ARTICLE.MARK_UNREAD' | translate) : ('ARTICLE.MARK_READ' | translate)"
+              [attr.aria-label]="isRead() ? ('ARTICLE.MARK_UNREAD' | translate) : ('ARTICLE.MARK_READ' | translate)"
             >
               <svg lucideCheck class="w-4 h-4"></svg>
             </button>
@@ -143,6 +148,7 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
               (click)="onOpen($event)"
               class="press p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
               [title]="'ARTICLE.OPEN_EXTERNAL' | translate"
+              [attr.aria-label]="'ARTICLE.OPEN_EXTERNAL' | translate"
             >
               <svg lucideExternalLink class="w-4 h-4"></svg>
             </a>
@@ -200,6 +206,7 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
               class="press p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
               [class.text-icon-accent]="isSaved()"
               [title]="isSaved() ? ('ARTICLE.REMOVE_SAVED' | translate) : ('ARTICLE.SAVE' | translate)"
+              [attr.aria-label]="isSaved() ? ('ARTICLE.REMOVE_SAVED' | translate) : ('ARTICLE.SAVE' | translate)"
             >
               <svg lucideBookmark class="w-4 h-4" [class.fill-current]="isSaved()"></svg>
             </button>
@@ -209,6 +216,7 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
               class="press p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
               [class.text-icon-accent]="isRead()"
               [title]="isRead() ? ('ARTICLE.MARK_UNREAD' | translate) : ('ARTICLE.MARK_READ' | translate)"
+              [attr.aria-label]="isRead() ? ('ARTICLE.MARK_UNREAD' | translate) : ('ARTICLE.MARK_READ' | translate)"
             >
               <svg lucideCheck class="w-4 h-4"></svg>
             </button>
@@ -219,6 +227,7 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
               (click)="onOpen($event)"
               class="press p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
               [title]="'ARTICLE.OPEN_EXTERNAL' | translate"
+              [attr.aria-label]="'ARTICLE.OPEN_EXTERNAL' | translate"
             >
               <svg lucideExternalLink class="w-4 h-4"></svg>
             </a>

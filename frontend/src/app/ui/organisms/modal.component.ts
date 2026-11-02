@@ -1,4 +1,12 @@
-import { Component, HostListener, input, output } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  HostListener,
+  ViewChild,
+  effect,
+  input,
+  output,
+} from '@angular/core';
 import { LucideX } from '@lucide/angular';
 
 @Component({
@@ -8,13 +16,17 @@ import { LucideX } from '@lucide/angular';
   template: `
     @if (open()) {
       <div
+        #modalBackdrop
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-overlay backdrop-blur-[4px] modal-scrim-enter"
         (click)="onBackdropClick($event)"
+        (keydown)="onKeydown($event)"
         role="dialog"
         aria-modal="true"
         [attr.aria-labelledby]="title() ? 'modal-title' : null"
+        tabindex="-1"
       >
         <div
+          #modalPanel
           class="relative w-full max-w-[600px] max-h-[90vh] flex flex-col rounded-3xl border border-border-default bg-bg-surface shadow-elevation-4 overflow-hidden modal-panel-enter"
           (click)="$event.stopPropagation()"
         >
@@ -34,8 +46,9 @@ import { LucideX } from '@lucide/angular';
             </div>
 
             <button
+              #closeButton
               type="button"
-              (click)="close.emit()"
+              (click)="onClose()"
               class="press p-2 -mr-2 -mt-2 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
               aria-label="Fechar"
             >
@@ -65,16 +78,90 @@ export class ModalComponent {
 
   close = output<void>();
 
+  @ViewChild('modalPanel') modalPanel?: ElementRef<HTMLElement>;
+  @ViewChild('closeButton') closeButton?: ElementRef<HTMLButtonElement>;
+
+  private previousActiveElement: HTMLElement | null = null;
+
+  constructor() {
+    effect(() => {
+      const isOpen = this.open();
+      if (isOpen) {
+        if (typeof document !== 'undefined') {
+          this.previousActiveElement = document.activeElement as HTMLElement | null;
+        }
+        setTimeout(() => {
+          this.focusFirstElement();
+        }, 0);
+      } else {
+        this.restoreFocus();
+      }
+    });
+  }
+
+  private getFocusableElements(): HTMLElement[] {
+    if (!this.modalPanel?.nativeElement) return [];
+    const selector =
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    return Array.from(this.modalPanel.nativeElement.querySelectorAll<HTMLElement>(selector)).filter(
+      (el) => el.offsetParent !== null || el === this.closeButton?.nativeElement,
+    );
+  }
+
+  private focusFirstElement() {
+    const focusables = this.getFocusableElements();
+    if (focusables.length > 0) {
+      focusables[0].focus();
+    } else {
+      this.closeButton?.nativeElement?.focus();
+    }
+  }
+
+  private restoreFocus() {
+    if (this.previousActiveElement && typeof this.previousActiveElement.focus === 'function') {
+      this.previousActiveElement.focus();
+      this.previousActiveElement = null;
+    }
+  }
+
+  onClose() {
+    this.close.emit();
+  }
+
   onBackdropClick(event: MouseEvent) {
     if (this.closeOnBackdrop()) {
-      this.close.emit();
+      this.onClose();
     }
   }
 
   @HostListener('window:keydown.escape')
   onEscape() {
     if (this.open()) {
-      this.close.emit();
+      this.onClose();
+    }
+  }
+
+  onKeydown(event: KeyboardEvent) {
+    if (event.key !== 'Tab') return;
+    const focusables = this.getFocusableElements();
+    if (focusables.length === 0) {
+      event.preventDefault();
+      return;
+    }
+
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+
+    if (event.shiftKey) {
+      if (document.activeElement === first || document.activeElement === this.modalPanel?.nativeElement) {
+        event.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     }
   }
 }

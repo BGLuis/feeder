@@ -67,8 +67,9 @@ import {
             <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="flex flex-col gap-5">
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div class="flex flex-col gap-1.5">
-                  <label class="text-label text-text-primary">Display Name</label>
+                  <label for="settings-name" class="text-label text-text-primary">Display Name</label>
                   <input
+                    id="settings-name"
                     type="text"
                     formControlName="name"
                     placeholder="John Doe"
@@ -77,8 +78,9 @@ import {
                 </div>
 
                 <div class="flex flex-col gap-1.5">
-                  <label class="text-label text-text-primary">Email Address</label>
+                  <label for="settings-email" class="text-label text-text-primary">Email Address</label>
                   <input
+                    id="settings-email"
                     type="email"
                     formControlName="email"
                     class="w-full h-11 px-3.5 bg-bg-field border border-border-default rounded-lg text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-border-focus focus:shadow-focus-ring text-sm transition-colors"

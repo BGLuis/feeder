@@ -36,8 +36,9 @@ import { TranslatePipe } from '@ngx-translate/core';
 
             <form (ngSubmit)="onRegister()" class="space-y-5">
               <div class="space-y-1.5 text-left">
-                <label class="text-label text-text-primary block">Email</label>
+                <label for="register-email" class="text-label text-text-primary block">Email</label>
                 <input
+                  id="register-email"
                   type="email"
                   name="email"
                   placeholder="name@example.com"
@@ -48,8 +49,9 @@ import { TranslatePipe } from '@ngx-translate/core';
               </div>
 
               <div class="space-y-1.5 text-left">
-                <label class="text-label text-text-primary block">Password</label>
+                <label for="register-password" class="text-label text-text-primary block">Password</label>
                 <input
+                  id="register-password"
                   type="password"
                   name="password"
                   placeholder="••••••••"

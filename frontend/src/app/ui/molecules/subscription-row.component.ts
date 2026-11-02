@@ -71,6 +71,7 @@ import { SourceMarkComponent } from '../atoms/source-mark.component';
           (click)="refresh.emit(feed())"
           class="press p-2 rounded-full text-icon-tertiary hover:text-icon-accent hover:bg-bg-muted transition-colors"
           title="Force sync"
+          aria-label="Force sync"
         >
           <svg lucideRefreshCw class="w-4 h-4"></svg>
         </button>
@@ -79,6 +80,7 @@ import { SourceMarkComponent } from '../atoms/source-mark.component';
           (click)="edit.emit(feed())"
           class="press p-2 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-muted transition-colors"
           title="Edit feed"
+          aria-label="Edit feed"
         >
           <svg lucidePencil class="w-4 h-4"></svg>
         </button>
@@ -87,6 +89,7 @@ import { SourceMarkComponent } from '../atoms/source-mark.component';
           (click)="delete.emit(feed())"
           class="press p-2 rounded-full text-icon-tertiary hover:text-icon-danger hover:bg-bg-danger-subtle transition-colors"
           title="Delete subscription"
+          aria-label="Delete subscription"
         >
           <svg lucideTrash2 class="w-4 h-4"></svg>
         </button>
