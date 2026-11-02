@@ -6,6 +6,7 @@ import { AuthService } from '../core/auth.service';
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '../ui/atoms/button.component';
 import { AlertComponent } from '../ui/molecules/alert.component';
+import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-login',
@@ -17,6 +18,7 @@ import { AlertComponent } from '../ui/molecules/alert.component';
     RouterLink,
     ButtonComponent,
     AlertComponent,
+    TranslatePipe,
   ],
   template: `
     <app-auth-layout>
@@ -103,7 +105,7 @@ import { AlertComponent } from '../ui/molecules/alert.component';
               <a
                 routerLink="/register"
                 class="text-text-accent hover:underline font-medium transition-colors ml-1"
-                >Sign up</a
+                >{{ 'AUTH.SIGN_UP' | translate }}</a
               >
             </p>
           </div>

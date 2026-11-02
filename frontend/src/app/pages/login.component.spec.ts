@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { LoginComponent } from './login.component';
 import { AuthService } from '../core/auth.service';
 import { Router, provideRouter } from '@angular/router';
+import { provideTranslateService } from '@ngx-translate/core';
 
 class MockAuthService {
   loginArgs: any[] = [];
@@ -33,7 +34,8 @@ describe('LoginComponent', () => {
       imports: [LoginComponent],
       providers: [
         { provide: AuthService, useValue: authServiceMock },
-        provideRouter([])
+        provideRouter([]),
+        provideTranslateService(),
       ]
     }).compileComponents();
 

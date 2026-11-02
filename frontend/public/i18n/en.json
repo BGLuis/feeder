@@ -35,5 +35,16 @@
     "DARK": "Dark",
     "LIGHT": "Light",
     "FINISH": "Finish Setup"
+  },
+  "ARTICLE": {
+    "SAVE": "Save article",
+    "REMOVE_SAVED": "Remove from saved",
+    "MARK_READ": "Mark as read",
+    "MARK_UNREAD": "Mark as unread",
+    "OPEN_EXTERNAL": "Open external link"
+  },
+  "AUTH": {
+    "SIGN_IN": "Sign in",
+    "SIGN_UP": "Sign up"
   }
 }
