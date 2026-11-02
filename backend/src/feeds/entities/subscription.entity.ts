@@ -3,12 +3,14 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
+  Unique,
   type Relation,
 } from 'typeorm';
 import { User } from '../../auth/entities/user.entity';
 import { Source } from './source.entity';
 
 @Entity()
+@Unique(['user', 'source'])
 export class Subscription {
   @PrimaryGeneratedColumn('uuid')
   id: string;

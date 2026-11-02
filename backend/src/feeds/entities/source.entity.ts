@@ -19,8 +19,7 @@ export class Source {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Index()
-  @Column()
+  @Column({ length: 2048 })
   url: string;
 
   @Column()
@@ -50,6 +49,12 @@ export class Source {
 
   @Column({ default: 0 })
   consecutiveMisses: number;
+
+  @Column({ type: 'text', nullable: true })
+  lastError: string | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  lastErrorAt: Date | null;
 
   @OneToMany(() => Subscription, (subscription) => subscription.source)
   subscriptions: Relation<Subscription>[];

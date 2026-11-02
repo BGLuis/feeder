@@ -65,8 +65,9 @@ and the header ≤ 100 chars.
 ## Backend architecture
 
 `AppModule` (`backend/src/app.module.ts`) wires: global `ConfigModule`, `TypeOrmModule` (MySQL,
-`autoLoadEntities`, **`synchronize: true`** — schema is auto-migrated, there are no migration
-files), `BullModule` (Redis connection), `ScheduleModule`, plus feature modules `AuthModule`,
+`autoLoadEntities`, `synchronize: false` and `migrationsRun: true` in production with migrations
+under `backend/src/migrations/` managed via `npm run migration:*`, while non-production uses
+`synchronize: true` with automated pre-synchronization deduplication), `BullModule` (Redis connection),
 `FeedsModule`, `ScraperModule`, `WebhooksModule`, `LoggingModule`, `HealthModule`.
 
 ### The scraping pipeline (core flow)
@@ -128,8 +129,10 @@ Angular 22, **standalone components**, bootstrapped in `src/app/app.config.ts` (
   `@monaco-editor/loader` (`ui/code-editor.component.ts`) for feed selector scripts.
 - **HTTP** — `core/auth.interceptor.ts` reads `localStorage['access_token']` and adds the
   `Authorization: Bearer` header. Services under `core/services/` (`feeds.service.ts`,
-  `webhooks.service.ts`) **hardcode `http://localhost:3000`** — there is no dev proxy; the
-  backend allows all CORS origins.
+  `webhooks.service.ts`) use the `API_BASE_URL` injection token (defaulting to `/api`).
+  Development uses an Angular dev-server proxy: `proxy.conf.json` (`http://localhost:3000` for native
+  `ng serve`) and `proxy.conf.docker.json` (`http://backend:3000` under Docker). Production uses an Nginx
+  reverse proxy routing `/api/` to `http://backend:3000/`.
 - **i18n** — `@ngx-translate`, JSON catalogs in `public/i18n/{en,pt,es}.json`, default `en`.
 - **Theme** — `core/theme.service.ts` toggles light/dark.
 
@@ -147,8 +150,9 @@ Angular 22, **standalone components**, bootstrapped in `src/app/app.config.ts` (
   `auth/` as the source of truth for real Feeder behavior.
 - Backend TS path aliases exist (`@config/*`, `@redis/*`, `@common/*`, `@/*`, …) but are only
   used by the vendored modules; feature code uses relative imports.
-- `synchronize: true` — an entity change rewrites the live MySQL schema on next boot. There is
-  no migration workflow.
+- **Database Migrations**: Production uses TypeORM migrations (`backend/src/migrations/`, `npm run migration:*`)
+  with `synchronize: false` and `migrationsRun: true`. Non-production uses `synchronize: true` with a pre-sync
+  deduplication hook.
 - Env: copy `.env.example` to `.env`. Inside Docker, `DB_HOST=mysql` / `REDIS_HOST=redis`;
   running Node natively, both are `localhost`.
 - Some backend values are hardcoded rather than read from config (e.g. `AuthService.rpID`,

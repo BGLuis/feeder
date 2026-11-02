@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { InjectQueue } from '@nestjs/bullmq';
@@ -40,6 +44,13 @@ export class FeedsService {
       await this.sourceRepository.save(source);
     }
 
+    const existingSub = await this.subscriptionRepository.findOne({
+      where: { user: { id: userId } as any, source: { id: source.id } },
+    });
+    if (existingSub) {
+      throw new ConflictException('Already subscribed to this source');
+    }
+
     const encryptedState =
       data.isPrivate && data.authStorageState
         ? encryptSecret(data.authStorageState)
@@ -53,7 +64,19 @@ export class FeedsService {
     subscription.customName = data.name;
     if (encryptedState) subscription.authStorageState = encryptedState;
 
-    const saved = await this.subscriptionRepository.save(subscription);
+    let saved: Subscription;
+    try {
+      saved = await this.subscriptionRepository.save(subscription);
+    } catch (err: any) {
+      if (
+        err?.code === 'ER_DUP_ENTRY' ||
+        err?.errno === 1062 ||
+        (err?.name === 'QueryFailedError' && String(err).includes('Duplicate entry'))
+      ) {
+        throw new ConflictException('Already subscribed to this source');
+      }
+      throw err;
+    }
 
     await this.enqueueFetch(source, encryptedState);
 
@@ -68,7 +91,8 @@ export class FeedsService {
   }
 
   async getArticles(userId: string, query: ListArticlesQueryDto = {}) {
-    const { tag, search } = query;
+    const tag = query.tag?.trim();
+    const search = query.search?.trim();
     const page = Math.max(1, query.page ?? 1);
     const limit = Math.min(100, Math.max(1, query.limit ?? 50));
 
@@ -79,7 +103,7 @@ export class FeedsService {
       .where('user.id = :userId', { userId });
 
     if (tag) {
-      subQuery.andWhere('subscription.tags LIKE :tag', { tag: `%${tag}%` });
+      subQuery.andWhere('FIND_IN_SET(:tag, subscription.tags) > 0', { tag });
     }
 
     const subscriptions = await subQuery.getMany();
@@ -120,7 +144,7 @@ export class FeedsService {
       where: { id: subscriptionId, user: { id: userId } as any },
       relations: { source: true },
     });
-    if (!sub) throw new Error('Subscription not found');
+    if (!sub) throw new NotFoundException('Subscription not found');
 
     if (data.customName !== undefined) sub.customName = data.customName;
     if (data.tags !== undefined) sub.tags = data.tags;
@@ -168,7 +192,7 @@ export class FeedsService {
       where: { id: subscriptionId, user: { id: userId } as any },
       relations: { source: true },
     });
-    if (!sub) throw new Error('Subscription not found');
+    if (!sub) throw new NotFoundException('Subscription not found');
 
     await this.enqueueFetch(sub.source, sub.authStorageState);
 
@@ -176,10 +200,24 @@ export class FeedsService {
   }
 
   async deleteSubscription(userId: string, subscriptionId: string) {
-    return this.subscriptionRepository.delete({
-      id: subscriptionId,
-      user: { id: userId } as any,
+    const sub = await this.subscriptionRepository.findOne({
+      where: { id: subscriptionId, user: { id: userId } as any },
+      relations: { source: true },
     });
+    if (!sub) throw new NotFoundException('Subscription not found');
+
+    await this.subscriptionRepository.delete(sub.id);
+
+    if (sub.source?.isPrivate) {
+      const remainingOwners = await this.subscriptionRepository.count({
+        where: { source: { id: sub.source.id } },
+      });
+      if (remainingOwners === 0) {
+        await this.sourceRepository.delete(sub.source.id);
+      }
+    }
+
+    return { success: true };
   }
 
   /**
