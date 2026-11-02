@@ -192,8 +192,9 @@ import { CodeEditorComponent, CodeTemplate } from '../ui/atoms/code-editor.compo
         <div class="flex flex-col gap-5 py-2">
           <!-- Feed Name -->
           <div class="flex flex-col gap-1.5">
-            <label class="text-label text-text-primary">Feed Name</label>
+            <label for="edit-feed-name" class="text-label text-text-primary">Feed Name</label>
             <input
+              id="edit-feed-name"
               #editNameInput
               type="text"
               [value]="editingFeed()?.customName || editingFeed()?.source?.name || ''"
@@ -203,7 +204,7 @@ import { CodeEditorComponent, CodeTemplate } from '../ui/atoms/code-editor.compo
 
           <!-- Tags Input -->
           <div class="flex flex-col gap-1.5">
-            <label class="text-label text-text-primary">
+            <label for="edit-feed-tags" class="text-label text-text-primary">
               Tags
               <span class="text-text-tertiary text-xs font-normal ml-1">(Press Enter or Comma)</span>
             </label>
@@ -219,6 +220,7 @@ import { CodeEditorComponent, CodeTemplate } from '../ui/atoms/code-editor.compo
                 ></app-tag>
               }
               <input
+                id="edit-feed-tags"
                 type="text"
                 #editTagsInput
                 (keydown.enter)="

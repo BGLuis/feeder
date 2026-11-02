@@ -84,8 +84,9 @@ import { LucideWebhook, LucidePlus } from '@lucide/angular';
             class="flex flex-col gap-5 p-6 bg-bg-field border border-border-default rounded-xl"
           >
             <div class="flex flex-col gap-1.5">
-              <label class="text-label text-text-primary">Target URL</label>
+              <label for="webhook-url" class="text-label text-text-primary">Target URL</label>
               <input
+                id="webhook-url"
                 type="url"
                 formControlName="url"
                 placeholder="https://api.example.com/webhook"
@@ -105,8 +106,9 @@ import { LucideWebhook, LucidePlus } from '@lucide/angular';
 
               @if (webhookForm.get('triggerType')?.value !== 'ALL') {
                 <div class="flex flex-col gap-1.5">
-                  <label class="text-label text-text-primary">Trigger Value</label>
+                  <label for="webhook-trigger-value" class="text-label text-text-primary">Trigger Value</label>
                   <input
+                    id="webhook-trigger-value"
                     type="text"
                     formControlName="triggerValue"
                     placeholder="e.g. 'tech' or source ID"
@@ -117,8 +119,9 @@ import { LucideWebhook, LucidePlus } from '@lucide/angular';
             </div>
 
             <div class="flex flex-col gap-1.5">
-              <label class="text-label text-text-primary">Secret (Optional HMAC)</label>
+              <label for="webhook-secret" class="text-label text-text-primary">Secret (Optional HMAC)</label>
               <input
+                id="webhook-secret"
                 type="text"
                 formControlName="secret"
                 placeholder="Leave blank to auto-generate"

@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, effect, inject, signal } from '@angular/core';
 import { TranslateService, TranslatePipe } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -13,11 +13,20 @@ import { SelectComponent, SelectOption } from '../atoms/select.component';
   imports: [CommonModule, FormsModule, TranslatePipe, LucideSun, LucideMoon, ButtonComponent, SelectComponent],
   template: `
     @if (isVisible()) {
-      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-overlay backdrop-blur-[4px]">
+      <div
+        #setupBackdrop
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-overlay backdrop-blur-[4px]"
+        (keydown)="onKeydown($event)"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="setup-modal-title"
+        tabindex="-1"
+      >
         <div
+          #setupPanel
           class="bg-bg-surface border border-border-default rounded-3xl p-8 max-w-md w-full shadow-elevation-4 animate-in fade-in zoom-in-95 duration-200"
         >
-          <h2 class="text-heading-h2 font-medium text-text-primary mb-2">
+          <h2 id="setup-modal-title" class="text-heading-h2 font-medium text-text-primary mb-2">
             {{ 'SETUP.WELCOME' | translate }}
           </h2>
           <p class="text-body-sm text-text-secondary mb-8">
@@ -104,6 +113,68 @@ export class SetupModalComponent implements OnInit {
     { label: 'Español', value: 'es' },
     { label: 'Português', value: 'pt' },
   ];
+
+  @ViewChild('setupPanel') setupPanel?: ElementRef<HTMLElement>;
+  private previousActiveElement: HTMLElement | null = null;
+
+  constructor() {
+    effect(() => {
+      const visible = this.isVisible();
+      if (visible) {
+        if (typeof document !== 'undefined') {
+          this.previousActiveElement = document.activeElement as HTMLElement | null;
+        }
+        setTimeout(() => {
+          this.focusFirstElement();
+        }, 0);
+      } else {
+        this.restoreFocus();
+      }
+    });
+  }
+
+  private getFocusableElements(): HTMLElement[] {
+    if (!this.setupPanel?.nativeElement) return [];
+    const selector =
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    return Array.from(this.setupPanel.nativeElement.querySelectorAll<HTMLElement>(selector));
+  }
+
+  private focusFirstElement() {
+    const focusables = this.getFocusableElements();
+    if (focusables.length > 0) {
+      focusables[0].focus();
+    }
+  }
+
+  private restoreFocus() {
+    if (this.previousActiveElement && typeof this.previousActiveElement.focus === 'function') {
+      this.previousActiveElement.focus();
+      this.previousActiveElement = null;
+    }
+  }
+
+  onKeydown(event: KeyboardEvent) {
+    if (event.key !== 'Tab') return;
+    const focusables = this.getFocusableElements();
+    if (focusables.length === 0) {
+      event.preventDefault();
+      return;
+    }
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (event.shiftKey) {
+      if (document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+  }
 
   ngOnInit() {
     const isConfigured = localStorage.getItem('app_configured');
