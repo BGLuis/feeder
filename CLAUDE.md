@@ -65,9 +65,9 @@ and the header ≤ 100 chars.
 ## Backend architecture
 
 `AppModule` (`backend/src/app.module.ts`) wires: global `ConfigModule`, `TypeOrmModule` (MySQL,
-`autoLoadEntities`, **`synchronize: true`** — schema is auto-migrated, there are no migration
-files), `BullModule` (Redis connection), `ScheduleModule`, plus feature modules `AuthModule`,
-`FeedsModule`, `ScraperModule`, `WebhooksModule`, `LoggingModule`, `HealthModule`.
+`autoLoadEntities`, `synchronize` is enabled outside production and disabled in production —
+schema is auto-migrated in development/test), `BullModule` (Redis connection), `ScheduleModule`,
+plus feature modules `AuthModule`, `FeedsModule`, `ScraperModule`, `WebhooksModule`, `LoggingModule`.
 
 ### The scraping pipeline (core flow)
 
@@ -147,8 +147,8 @@ Angular 22, **standalone components**, bootstrapped in `src/app/app.config.ts` (
   `auth/` as the source of truth for real Feeder behavior.
 - Backend TS path aliases exist (`@config/*`, `@redis/*`, `@common/*`, `@/*`, …) but are only
   used by the vendored modules; feature code uses relative imports.
-- `synchronize: true` — an entity change rewrites the live MySQL schema on next boot. There is
-  no migration workflow.
+- `synchronize` is enabled in non-production environments (`NODE_ENV !== 'production'`) — an entity change rewrites the dev MySQL schema on next boot. In production, auto-synchronization is disabled.
+  There is no migration workflow.
 - Env: copy `.env.example` to `.env`. Inside Docker, `DB_HOST=mysql` / `REDIS_HOST=redis`;
   running Node natively, both are `localhost`.
 - Some backend values are hardcoded rather than read from config (e.g. `AuthService.rpID`,
