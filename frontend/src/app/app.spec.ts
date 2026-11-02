@@ -12,6 +12,7 @@ describe('App', () => {
       getItem: () => null,
       setItem: () => undefined,
       removeItem: () => undefined,
+      clear: () => undefined,
     });
     await TestBed.configureTestingModule({
       imports: [App],
@@ -32,6 +33,7 @@ describe('App', () => {
       getItem: (key: string) => (key === 'lang' ? 'es' : null),
       setItem: () => undefined,
       removeItem: () => undefined,
+      clear: () => undefined,
     });
     const translate = TestBed.inject(TranslateService);
     const useSpy = vi.spyOn(translate, 'use');

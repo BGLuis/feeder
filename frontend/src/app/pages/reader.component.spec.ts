@@ -29,6 +29,7 @@ describe('ReaderComponent', () => {
       getItem: () => null,
       setItem: () => undefined,
       removeItem: () => undefined,
+      clear: () => undefined,
     });
 
     feedsServiceSpy = {

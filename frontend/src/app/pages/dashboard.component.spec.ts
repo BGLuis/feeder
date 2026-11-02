@@ -17,6 +17,7 @@ describe('DashboardComponent', () => {
       getItem: () => null,
       setItem: () => undefined,
       removeItem: () => undefined,
+      clear: () => undefined,
     });
     feedsServiceSpy = {
       getSubscriptions: () => Promise.resolve([{ id: '1', customName: 'Angular Blog', source: { id: 's1', name: 'Angular Blog', url: 'https://blog.angular.dev' } }])

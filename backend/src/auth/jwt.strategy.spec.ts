@@ -8,7 +8,9 @@ describe('JwtStrategy', () => {
 
   beforeEach(() => {
     mockConfigService = {
-      getOrThrow: jest.fn().mockReturnValue('test-jwt-secret-min-32-characters-long'),
+      getOrThrow: jest
+        .fn()
+        .mockReturnValue('test-jwt-secret-min-32-characters-long'),
     };
     strategy = new JwtStrategy(mockConfigService as unknown as ConfigService);
   });

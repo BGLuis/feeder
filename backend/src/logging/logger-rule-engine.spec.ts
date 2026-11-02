@@ -1,4 +1,3 @@
-import { LogLevel } from '@common/types/logging.types';
 import { LoggerRuleEngine } from './logger-rule-engine';
 
 describe('LoggerRuleEngine', () => {

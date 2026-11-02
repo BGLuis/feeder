@@ -57,8 +57,8 @@ npx lefthook install                 # enable git hooks once after clone
 ```
 
 `lefthook` pre-commit runs `secretlint` on staged files and `biome check --write` on staged
-`*.{js,ts,cjs,mjs,json}` — expect Biome to reformat staged backend/frontend files against the
-**root** style, which differs from each app's own Prettier config. Commits must follow
+`*.{js,ts,cjs,mjs,json}` — Biome checks root files while excluding `backend/` and `frontend/`
+(which enforce their own Prettier/ESLint styles). Commits must follow
 Conventional Commits; scope must be one of `back|front|infra|docs|deps|repo|db|scripts|config`
 and the header ≤ 100 chars.
 

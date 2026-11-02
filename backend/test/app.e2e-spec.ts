@@ -3,6 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { DataSource } from 'typeorm';
+import { EventEmitter } from 'events';
 
 jest.mock('bullmq', () => {
   const actual = jest.requireActual('bullmq');
@@ -23,7 +24,6 @@ jest.mock('bullmq', () => {
 });
 
 jest.mock('ioredis', () => {
-  const EventEmitter = require('events');
   return jest.fn().mockImplementation(() => {
     const ee = new EventEmitter();
     ee.ping = jest.fn().mockResolvedValue('PONG');
@@ -45,10 +45,14 @@ describe('AppController (e2e)', () => {
   let jwtService: JwtService;
 
   beforeAll(async () => {
-    jest.spyOn(DataSource.prototype, 'initialize').mockImplementation(async function (this: DataSource) {
-      return this;
-    });
-    jest.spyOn(DataSource.prototype, 'destroy').mockImplementation(async function () {});
+    jest
+      .spyOn(DataSource.prototype, 'initialize')
+      .mockImplementation(async function (this: DataSource) {
+        return this;
+      });
+    jest
+      .spyOn(DataSource.prototype, 'destroy')
+      .mockImplementation(async function () {});
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -67,9 +71,7 @@ describe('AppController (e2e)', () => {
   });
 
   it('/feeds (GET) without token returns 401 Unauthorized', () => {
-    return request(app.getHttpServer())
-      .get('/feeds')
-      .expect(401);
+    return request(app.getHttpServer()).get('/feeds').expect(401);
   });
 
   it('/feeds/subscribe (POST) with extra/unknown field returns 400 Bad Request', () => {

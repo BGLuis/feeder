@@ -171,9 +171,15 @@ describe('AuthService', () => {
   describe('generatePasskeyOptions', () => {
     it('creates new user and returns registration options when user does not exist', async () => {
       userRepository.findOne.mockResolvedValueOnce(null);
-      userRepository.save.mockResolvedValueOnce({ id: 'u-1', email: 'new@example.com' });
+      userRepository.save.mockResolvedValueOnce({
+        id: 'u-1',
+        email: 'new@example.com',
+      });
 
-      const options = await service.generatePasskeyOptions('new@example.com', 'register');
+      const options = await service.generatePasskeyOptions(
+        'new@example.com',
+        'register',
+      );
 
       expect(options).toEqual({ challenge: 'reg-challenge-123' });
       expect(userRepository.save).toHaveBeenCalled();
@@ -192,7 +198,10 @@ describe('AuthService', () => {
         credentials: [{ credentialID: 'cred-1' }],
       });
 
-      const options = await service.generatePasskeyOptions('existing@example.com', 'authenticate');
+      const options = await service.generatePasskeyOptions(
+        'existing@example.com',
+        'authenticate',
+      );
 
       expect(options).toEqual({ challenge: 'auth-challenge-456' });
       expect(redisMock.set).toHaveBeenCalledWith(
@@ -208,9 +217,9 @@ describe('AuthService', () => {
     it('throws BadRequestException when user not found', async () => {
       userRepository.findOne.mockResolvedValueOnce(null);
 
-      await expect(service.updateProfile('u-missing', 'New Name')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.updateProfile('u-missing', 'New Name'),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('throws BadRequestException when email is already in use by another user', async () => {
@@ -230,7 +239,11 @@ describe('AuthService', () => {
         .mockResolvedValueOnce(null); // email not taken
       userRepository.save.mockResolvedValueOnce(user);
 
-      const result = await service.updateProfile('u-1', 'New', 'new@example.com');
+      const result = await service.updateProfile(
+        'u-1',
+        'New',
+        'new@example.com',
+      );
 
       expect(user.name).toBe('New');
       expect(user.email).toBe('new@example.com');

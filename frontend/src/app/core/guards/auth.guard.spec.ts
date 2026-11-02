@@ -5,9 +5,22 @@ import { authGuard } from './auth.guard';
 
 describe('authGuard', () => {
   let router: Router;
+  let mockStorage: Record<string, string> = {};
 
   beforeEach(() => {
-    localStorage.clear();
+    mockStorage = {};
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => mockStorage[key] ?? null,
+      setItem: (key: string, value: string) => {
+        mockStorage[key] = value;
+      },
+      removeItem: (key: string) => {
+        delete mockStorage[key];
+      },
+      clear: () => {
+        mockStorage = {};
+      },
+    });
     TestBed.configureTestingModule({
       providers: [
         {
