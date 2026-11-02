@@ -261,6 +261,7 @@ export class ScraperProcessor extends WorkerHost implements OnModuleDestroy {
   }
 
   async onModuleDestroy() {
+    this.logger.log('Closing Playwright browser on shutdown');
     await this.browser?.close().catch(() => undefined);
   }
 
