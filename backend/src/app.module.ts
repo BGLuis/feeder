@@ -5,6 +5,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import Redis from 'ioredis';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -101,6 +102,22 @@ import { WebhooksModule } from './webhooks/webhooks.module';
 	controllers: [AppController],
 	providers: [
 		AppService,
+		{
+			provide: 'REDIS_HEALTH_CLIENT',
+			useFactory: (configService: ConfigService) => {
+				const client = new Redis({
+					host: configService.get<string>('REDIS_HOST', 'localhost'),
+					port: configService.get<number>('REDIS_PORT', 6379),
+					password: configService.get<string>('REDIS_PASSWORD') || undefined,
+					maxRetriesPerRequest: 1,
+					connectTimeout: 2000,
+					lazyConnect: true,
+				});
+				client.on('error', () => {});
+				return client;
+			},
+			inject: [ConfigService],
+		},
 		{ provide: APP_GUARD, useClass: ThrottlerGuard },
 		{ provide: APP_GUARD, useClass: JwtAuthGuard },
 		{ provide: APP_GUARD, useClass: RolesGuard },

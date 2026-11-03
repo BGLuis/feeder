@@ -4,11 +4,10 @@ import {
   HttpException,
   HttpStatus,
   Inject,
+  Logger,
   OnModuleDestroy,
-  Optional,
 } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 import { AppService } from './app.service';
 import { Public } from './auth/public.decorator';
@@ -16,28 +15,13 @@ import { Public } from './auth/public.decorator';
 @Public()
 @Controller()
 export class AppController implements OnModuleDestroy {
-  private redisClient: Redis;
+  private readonly logger = new Logger(AppController.name);
 
   constructor(
     private readonly appService: AppService,
     private readonly dataSource: DataSource,
-    private readonly configService: ConfigService,
-    @Optional() @Inject('REDIS_HEALTH_CLIENT') injectedRedis?: Redis,
-  ) {
-    if (injectedRedis) {
-      this.redisClient = injectedRedis;
-    } else {
-      this.redisClient = new Redis({
-        host: this.configService.get<string>('REDIS_HOST', 'localhost'),
-        port: this.configService.get<number>('REDIS_PORT', 6379),
-        password: this.configService.get<string>('REDIS_PASSWORD') || undefined,
-        maxRetriesPerRequest: 1,
-        connectTimeout: 2000,
-        lazyConnect: true,
-      });
-      this.redisClient.on('error', () => {});
-    }
-  }
+    @Inject('REDIS_HEALTH_CLIENT') private readonly redisClient: Redis,
+  ) {}
 
   async onModuleDestroy() {
     await this.redisClient.quit().catch(() => undefined);
@@ -50,23 +34,42 @@ export class AppController implements OnModuleDestroy {
 
   @Get('health')
   async health() {
+    let dbStatus = 'down';
+    let redisStatus = 'down';
+
     try {
       await this.dataSource.query('SELECT 1');
-      const pong = await this.redisClient.ping();
-      if (pong !== 'PONG') {
-        throw new Error('Redis ping failed');
-      }
-      return { status: 'ok', uptime: process.uptime(), db: 'up', redis: 'up' };
+      dbStatus = 'up';
     } catch (error) {
+      this.logger.error('Database health check failed', error as Error);
+    }
+
+    try {
+      const pong = await this.redisClient.ping();
+      if (pong === 'PONG') {
+        redisStatus = 'up';
+      }
+    } catch (error) {
+      this.logger.error('Redis health check failed', error as Error);
+    }
+
+    if (dbStatus !== 'up' || redisStatus !== 'up') {
       throw new HttpException(
         {
           status: 'error',
-          message:
-            error instanceof Error ? error.message : 'Health check failed',
           uptime: process.uptime(),
+          db: dbStatus,
+          redis: redisStatus,
         },
         HttpStatus.SERVICE_UNAVAILABLE,
       );
     }
+
+    return {
+      status: 'ok',
+      uptime: process.uptime(),
+      db: dbStatus,
+      redis: redisStatus,
+    };
   }
 }

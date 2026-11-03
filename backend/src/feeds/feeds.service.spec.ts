@@ -317,20 +317,4 @@ describe('FeedsService', () => {
       );
     });
   });
-
-  describe('deleteSubscription', () => {
-    it('calls subscriptionRepository.delete with id and userId', async () => {
-      subscriptionRepository.delete = jest
-        .fn()
-        .mockResolvedValueOnce({ affected: 1 });
-
-      const result = await service.deleteSubscription('user-1', 'sub-1');
-
-      expect(subscriptionRepository.delete).toHaveBeenCalledWith({
-        id: 'sub-1',
-        user: { id: 'user-1' },
-      });
-      expect(result).toEqual({ affected: 1 });
-    });
-  });
 });

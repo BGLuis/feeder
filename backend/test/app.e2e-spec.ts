@@ -25,7 +25,7 @@ jest.mock('bullmq', () => {
 
 jest.mock('ioredis', () => {
   return jest.fn().mockImplementation(() => {
-    const ee = new EventEmitter();
+    const ee: any = new EventEmitter();
     ee.ping = jest.fn().mockResolvedValue('PONG');
     ee.quit = jest.fn().mockResolvedValue('OK');
     ee.disconnect = jest.fn();
@@ -85,9 +85,15 @@ describe('AppController (e2e)', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         url: 'https://example.com/feed.xml',
+        name: 'Valid Name',
         unknownField: 'malicious-or-unexpected-payload',
       })
-      .expect(400);
+      .expect(400)
+      .expect((res) => {
+        expect(res.body.message).toEqual(
+          expect.arrayContaining([expect.stringContaining('unknownField')]),
+        );
+      });
   });
 
   afterAll(async () => {

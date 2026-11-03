@@ -488,7 +488,7 @@ export class ScraperProcessor extends WorkerHost implements BeforeApplicationShu
 							url: In(links),
 							source: { id: source.id },
 						},
-						select: ['url'],
+						select: { url: true },
 					})
 				: [];
 		const existingUrls = new Set(
