@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { getQueueToken } from '@nestjs/bullmq';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { FeedsService } from './feeds.service';
 import { Source, SourceType } from './entities/source.entity';
 import { Subscription } from './entities/subscription.entity';
@@ -17,12 +18,14 @@ describe('FeedsService', () => {
       save: jest
         .fn()
         .mockImplementation((s) => Promise.resolve({ id: 's-new', ...s })),
+      delete: jest.fn().mockResolvedValue({ affected: 1 }),
     };
     subscriptionRepository = {
       save: jest.fn().mockImplementation((s) => Promise.resolve(s)),
       findOne: jest.fn(),
       find: jest.fn(),
       count: jest.fn(),
+      delete: jest.fn().mockResolvedValue({ affected: 1 }),
     };
     scraperQueue = { add: jest.fn() };
 
@@ -47,6 +50,7 @@ describe('FeedsService', () => {
     it('reuses an existing public Source and enqueues a fetch', async () => {
       const existing = { id: 'src-1', url: 'http://rss.com', isPrivate: false };
       sourceRepository.findOne.mockResolvedValueOnce(existing);
+      subscriptionRepository.findOne.mockResolvedValueOnce(null);
 
       await service.subscribe('user-1', {
         url: 'http://rss.com',
@@ -62,6 +66,8 @@ describe('FeedsService', () => {
     });
 
     it('encrypts authStorageState for a private feed before persisting it', async () => {
+      subscriptionRepository.findOne.mockResolvedValueOnce(null);
+
       await service.subscribe('user-1', {
         url: 'http://private.com',
         name: 'Private',
@@ -73,9 +79,39 @@ describe('FeedsService', () => {
       expect(savedSub.authStorageState).toEqual(expect.stringMatching(/^v1\./));
       expect(savedSub.authStorageState).not.toContain('cookies');
     });
+
+    it('rejects with ConflictException (409) and creates no row on duplicate subscription', async () => {
+      const existing = { id: 'src-1', url: 'http://rss.com', isPrivate: false };
+      sourceRepository.findOne.mockResolvedValueOnce(existing);
+      subscriptionRepository.findOne.mockResolvedValueOnce({
+        id: 'sub-existing',
+        user: { id: 'user-1' },
+        source: existing,
+      });
+
+      await expect(
+        service.subscribe('user-1', {
+          url: 'http://rss.com',
+          name: 'Feed',
+          isPrivate: false,
+        }),
+      ).rejects.toThrow(ConflictException);
+
+      expect(subscriptionRepository.save).not.toHaveBeenCalled();
+    });
   });
 
   describe('updateSubscription', () => {
+    it('throws NotFoundException when subscription is not found', async () => {
+      subscriptionRepository.findOne.mockResolvedValueOnce(null);
+
+      await expect(
+        service.updateSubscription('user-1', 'missing-id', {
+          customName: 'New Name',
+        }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
     it('copies a shared Source instead of mutating it in place', async () => {
       const sharedSource = {
         id: 'src-shared',
@@ -124,6 +160,78 @@ describe('FeedsService', () => {
     });
   });
 
+  describe('refreshSubscription', () => {
+    it('throws NotFoundException when subscription is not found', async () => {
+      subscriptionRepository.findOne.mockResolvedValueOnce(null);
+
+      await expect(
+        service.refreshSubscription('user-1', 'missing-id'),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('enqueues fetch for found subscription', async () => {
+      const sub = {
+        id: 'sub-1',
+        source: { id: 'src-1', url: 'https://example.com/rss' },
+        authStorageState: 'state-1',
+      };
+      subscriptionRepository.findOne.mockResolvedValueOnce(sub);
+
+      const res = await service.refreshSubscription('user-1', 'sub-1');
+      expect(res).toEqual({ success: true });
+      expect(scraperQueue.add).toHaveBeenCalledWith('fetch', {
+        url: sub.source.url,
+        sourceId: sub.source.id,
+        authStorageState: 'state-1',
+      });
+    });
+  });
+
+  describe('deleteSubscription', () => {
+    it('throws NotFoundException when subscription is not found', async () => {
+      subscriptionRepository.findOne.mockResolvedValueOnce(null);
+
+      await expect(
+        service.deleteSubscription('user-1', 'missing-id'),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('deleting the last subscription of a public source does not delete the source', async () => {
+      const publicSource = {
+        id: 'src-public',
+        url: 'https://public.example/feed',
+        isPrivate: false,
+      };
+      subscriptionRepository.findOne.mockResolvedValueOnce({
+        id: 'sub-pub',
+        source: publicSource,
+      });
+
+      await service.deleteSubscription('user-1', 'sub-pub');
+
+      expect(subscriptionRepository.delete).toHaveBeenCalledWith('sub-pub');
+      expect(sourceRepository.delete).not.toHaveBeenCalled();
+    });
+
+    it('deleting the only subscription of a private source deletes that Source row', async () => {
+      const privateSource = {
+        id: 'src-priv',
+        url: 'https://private.example/feed',
+        isPrivate: true,
+      };
+      subscriptionRepository.findOne.mockResolvedValueOnce({
+        id: 'sub-priv',
+        source: privateSource,
+      });
+      subscriptionRepository.count.mockResolvedValueOnce(0); // 0 remaining owners
+
+      await service.deleteSubscription('user-1', 'sub-priv');
+
+      expect(subscriptionRepository.delete).toHaveBeenCalledWith('sub-priv');
+      expect(sourceRepository.delete).toHaveBeenCalledWith('src-priv');
+    });
+  });
+
   describe('getArticles', () => {
     it('searches title/content (never a non-existent description column)', async () => {
       const articleQb: any = {
@@ -156,6 +264,26 @@ describe('FeedsService', () => {
       expect(sql).not.toContain('description');
       // limit is clamped to 100
       expect(articleQb.take).toHaveBeenCalledWith(100);
+    });
+
+    it('filters whole tag with FIND_IN_SET so news does not match newsletter', async () => {
+      const subQb: any = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        leftJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getMany: jest.fn().mockResolvedValue([]),
+      };
+      subscriptionRepository.createQueryBuilder = jest
+        .fn()
+        .mockReturnValue(subQb);
+
+      await service.getArticles('user-1', { tag: 'news' });
+
+      expect(subQb.andWhere).toHaveBeenCalledWith(
+        'FIND_IN_SET(:tag, subscription.tags) > 0',
+        { tag: 'news' },
+      );
     });
   });
 

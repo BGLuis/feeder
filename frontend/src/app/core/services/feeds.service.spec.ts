@@ -27,7 +27,7 @@ describe('FeedsService', () => {
     const mockFeeds = [{ id: '1', url: 'https://example.com' }];
     const promise = service.getSubscriptions();
     
-    const req = httpTesting.expectOne('http://localhost:3000/feeds');
+    const req = httpTesting.expectOne('/api/feeds');
     expect(req.request.method).toBe('GET');
     req.flush(mockFeeds);
 
@@ -37,7 +37,7 @@ describe('FeedsService', () => {
 
   it('should propagate 500 error on fetch failure', async () => {
     const promise = service.getSubscriptions();
-    const req = httpTesting.expectOne('http://localhost:3000/feeds');
+    const req = httpTesting.expectOne('/api/feeds');
     req.flush('Server Error', { status: 500, statusText: 'Internal Server Error' });
 
     try {

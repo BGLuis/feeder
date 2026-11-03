@@ -9,6 +9,7 @@ import {
   Param,
   Patch,
   Query,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { FeedsService } from './feeds.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -41,19 +42,25 @@ export class FeedsController {
   @Patch(':id')
   async updateSubscription(
     @Request() req: any,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() body: UpdateSubscriptionDto,
   ) {
     return this.feedsService.updateSubscription(req.user.id, id, body);
   }
 
   @Post(':id/refresh')
-  async refreshSubscription(@Request() req: any, @Param('id') id: string) {
+  async refreshSubscription(
+    @Request() req: any,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     return this.feedsService.refreshSubscription(req.user.id, id);
   }
 
   @Delete(':id')
-  async deleteSubscription(@Request() req: any, @Param('id') id: string) {
+  async deleteSubscription(
+    @Request() req: any,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     return this.feedsService.deleteSubscription(req.user.id, id);
   }
 }

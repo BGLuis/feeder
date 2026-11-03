@@ -65,9 +65,10 @@ and the header ≤ 100 chars.
 ## Backend architecture
 
 `AppModule` (`backend/src/app.module.ts`) wires: global `ConfigModule`, `TypeOrmModule` (MySQL,
-`autoLoadEntities`, `synchronize` is enabled outside production and disabled in production —
-schema is auto-migrated in development/test), `BullModule` (Redis connection), `ScheduleModule`,
-plus feature modules `AuthModule`, `FeedsModule`, `ScraperModule`, `WebhooksModule`, `LoggingModule`.
+`autoLoadEntities`, `synchronize: false` and `migrationsRun: true` in production with migrations
+under `backend/src/migrations/` managed via `npm run migration:*`, while non-production uses
+`synchronize: true` with automated pre-synchronization deduplication), `BullModule` (Redis connection),
+`ScheduleModule`, plus feature modules `AuthModule`, `FeedsModule`, `ScraperModule`, `WebhooksModule`, `LoggingModule`.
 
 ### The scraping pipeline (core flow)
 
@@ -128,8 +129,10 @@ Angular 22, **standalone components**, bootstrapped in `src/app/app.config.ts` (
   `@monaco-editor/loader` (`ui/code-editor.component.ts`) for feed selector scripts.
 - **HTTP** — `core/auth.interceptor.ts` reads `localStorage['access_token']` and adds the
   `Authorization: Bearer` header. Services under `core/services/` (`feeds.service.ts`,
-  `webhooks.service.ts`) **hardcode `http://localhost:3000`** — there is no dev proxy; the
-  backend allows all CORS origins.
+  `webhooks.service.ts`) use the `API_BASE_URL` injection token (defaulting to `/api`).
+  Development uses an Angular dev-server proxy: `proxy.conf.json` (`http://localhost:3000` for native
+  `ng serve`) and `proxy.conf.docker.json` (`http://backend:3000` under Docker). Production uses an Nginx
+  reverse proxy routing `/api/` to `http://backend:3000/`.
 - **i18n** — `@ngx-translate`, JSON catalogs in `public/i18n/{en,pt,es}.json`, default `en`.
 - **Theme** — `core/theme.service.ts` toggles light/dark.
 
@@ -138,17 +141,12 @@ Angular 22, **standalone components**, bootstrapped in `src/app/app.config.ts` (
 - Follow `gemini.md` (project's 12-rule working agreement, in Portuguese): make surgical
   changes, match existing style ("Clean Code + standard NestJS", **not** strict Hexagonal),
   put throwaway scripts in `.ai-scripts/`, always use Docker for orchestration, fail loudly.
-- **Vendored / drifting modules**: `backend/src/{config,logging,health,redis,encryption,common}`
-  were copied from another project ("gatuno"). `config/app-config.schema.ts` is that project's
-  Joi schema (requires `DB_TYPE`, `API_URL`, `USERADMIN_EMAIL`, Kafka/MQTT/RustFS vars…) and
-  does **not** match Feeder's `.env` / `.env.example`. `LoggingModule` and `HealthModule` are
-  imported by `AppModule` and pull in `AppConfigModule`. Before assuming these work, verify
-  `cd backend && npm run start:dev` actually boots; prefer `feeds/`, `scraper/`, `webhooks/`,
-  `auth/` as the source of truth for real Feeder behavior.
-- Backend TS path aliases exist (`@config/*`, `@redis/*`, `@common/*`, `@/*`, …) but are only
-  used by the vendored modules; feature code uses relative imports.
-- `synchronize` is enabled in non-production environments (`NODE_ENV !== 'production'`) — an entity change rewrites the dev MySQL schema on next boot. In production, auto-synchronization is disabled.
-  There is no migration workflow.
+- **Vendored / legacy cleanup**: Unused modules from initial scaffolding (`health`, `redis`, `encryption`,
+  unused config schemas) have been pruned. Active features live cleanly in `feeds/`, `scraper/`,
+  `webhooks/`, `auth/`, and `logging/` with relative imports.
+- **Database Migrations**: Production uses TypeORM migrations (`backend/src/migrations/`, `npm run migration:*`)
+  with `synchronize: false` and `migrationsRun: true`. Non-production uses `synchronize: true` with a pre-sync
+  deduplication hook.
 - Env: copy `.env.example` to `.env`. Inside Docker, `DB_HOST=mysql` / `REDIS_HOST=redis`;
   running Node natively, both are `localhost`.
 - Some backend values are hardcoded rather than read from config (e.g. `AuthService.rpID`,

@@ -19,9 +19,18 @@ RUN rm -rf /usr/share/nginx/html/*
 # Adjusting to the new application builder output structure (browser folder)
 COPY --from=builder /usr/src/app/dist/frontend/browser /usr/share/nginx/html
 
-# Configure Nginx for Angular routing (SPA)
+# Configure Nginx for Angular routing (SPA) and API proxy
 RUN echo -e "server {\n\
     listen 80;\n\
+\n\
+    location /api/ {\n\
+        proxy_pass http://backend:3000/;\n\
+        proxy_set_header Host \$host;\n\
+        proxy_set_header X-Real-IP \$remote_addr;\n\
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n\
+        proxy_set_header X-Forwarded-Proto \$scheme;\n\
+    }\n\
+\n\
     location / {\n\
         root /usr/share/nginx/html;\n\
         index index.html index.htm;\n\

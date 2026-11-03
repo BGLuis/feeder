@@ -8,7 +8,9 @@ pre-commit:
       run: npx secretlint {staged_files}
     check-code:
       glob: "*.{js,ts,cjs,mjs,json}"
-      exclude: "(^backend/|^frontend/)"
+      exclude:
+        - "backend/**"
+        - "frontend/**"
       stage_fixed: true
       run: npx @biomejs/biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
 

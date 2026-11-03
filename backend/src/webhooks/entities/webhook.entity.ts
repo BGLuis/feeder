@@ -18,7 +18,7 @@ export class Webhook {
   @ManyToOne(() => User, (user) => user.webhooks, { onDelete: 'CASCADE' })
   user: Relation<User>;
 
-  @Column()
+  @Column({ length: 2048 })
   url: string;
 
   @Column({ nullable: true })
