@@ -20,7 +20,14 @@
     "REFRESH": "Refresh",
     "SYNC_NOW": "Sync now",
     "HEALTHY": "Healthy",
-    "ERROR": "Error"
+    "ERROR": "Error",
+    "RETRY": "Retry",
+    "ERROR_LOADING_FEEDS": "Error loading feeds",
+    "ERROR_LOADING_FEEDS_DESC": "Could not load feeds. Please check your connection and try again.",
+    "ERROR_LOADING_ARTICLES": "Error loading articles",
+    "ERROR_LOADING_ARTICLES_DESC": "Could not load articles. Please check your connection and try again.",
+    "ERROR_LOADING_WEBHOOKS": "Error loading webhooks",
+    "ERROR_LOADING_WEBHOOKS_DESC": "Could not load webhooks. Please check your connection and try again."
   },
   "SETTINGS": {
     "PREFERENCES_TITLE": "App Preferences",
@@ -46,5 +53,10 @@
   "AUTH": {
     "SIGN_IN": "Sign in",
     "SIGN_UP": "Sign up"
+  },
+  "FEED": {
+    "FORCE_SYNC": "Force sync",
+    "EDIT_FEED": "Edit feed",
+    "DELETE_SUBSCRIPTION": "Delete subscription"
   }
 }

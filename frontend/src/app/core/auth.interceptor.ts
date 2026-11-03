@@ -24,9 +24,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       if (error.status === 401 && !req.url.includes('/auth/login')) {
         authService.logout();
         const currentUrl = router.url;
+        const isLoginUrl = currentUrl.startsWith('/login');
         const queryParams =
-          currentUrl && currentUrl !== '/login' ? { returnUrl: currentUrl } : undefined;
-        router.navigate(['/login'], { queryParams });
+          currentUrl && !isLoginUrl ? { returnUrl: currentUrl } : undefined;
+        router.navigate(['/login'], queryParams ? { queryParams } : undefined);
       }
       return throwError(() => error);
     }),

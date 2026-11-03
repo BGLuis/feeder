@@ -9,6 +9,7 @@ import { ButtonComponent } from '../ui/atoms/button.component';
 import { SelectComponent, SelectOption } from '../ui/atoms/select.component';
 import { EmptyStateComponent } from '../ui/molecules/empty-state.component';
 import { LucideWebhook, LucidePlus } from '@lucide/angular';
+import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-webhooks-config',
@@ -24,6 +25,7 @@ import { LucideWebhook, LucidePlus } from '@lucide/angular';
     EmptyStateComponent,
     LucideWebhook,
     LucidePlus,
+    TranslatePipe,
   ],
   template: `
     <section class="bg-bg-surface rounded-2xl shadow-elevation-1 border border-border-default p-6 sm:p-8">
@@ -43,10 +45,10 @@ import { LucideWebhook, LucidePlus } from '@lucide/angular';
 
       <div class="flex flex-col gap-4">
         @if (webhooksService.error() && !showForm()) {
-          <app-alert tone="danger" title="Error loading webhooks" [description]="webhooksService.error()!">
+          <app-alert tone="danger" [title]="'COMMON.ERROR_LOADING_WEBHOOKS' | translate" [description]="webhooksService.error()!">
             <div class="mt-3">
               <app-button (click)="webhooksService.loadWebhooks()" variant="secondary" size="sm">
-                Retry
+                {{ 'COMMON.RETRY' | translate }}
               </app-button>
             </div>
           </app-alert>
@@ -96,8 +98,9 @@ import { LucideWebhook, LucidePlus } from '@lucide/angular';
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="flex flex-col gap-1.5">
-                <label class="text-label text-text-primary">Trigger Event</label>
+                <span id="webhook-trigger-type-label" class="text-label text-text-primary">Trigger Event</span>
                 <app-select
+                  aria-labelledby="webhook-trigger-type-label"
                   [options]="triggerOptions"
                   [value]="webhookForm.get('triggerType')?.value"
                   (valueChange)="webhookForm.patchValue({ triggerType: $event })"
@@ -130,11 +133,12 @@ import { LucideWebhook, LucidePlus } from '@lucide/angular';
             </div>
 
             <div class="flex flex-col gap-1.5">
-              <label class="text-label text-text-primary">Payload Template (JSON)</label>
+              <span id="webhook-payload-label" class="text-label text-text-primary">Payload Template (JSON)</span>
               <p ngNonBindable class="text-xs text-text-tertiary mb-1">
                 Available variables: <code>{{item.title}}</code>, <code>{{item.url}}</code>, <code>{{item.content}}</code>, <code>{{item.imageUrl}}</code>, <code>{{feed.name}}</code>
               </p>
               <app-code-editor
+                aria-labelledby="webhook-payload-label"
                 title="Webhook Payload"
                 language="json"
                 height="220px"

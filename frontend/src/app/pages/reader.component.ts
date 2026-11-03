@@ -24,6 +24,7 @@ import { SegmentedComponent, SegmentOption } from '../ui/atoms/segmented.compone
 import { ChipComponent } from '../ui/atoms/chip.component';
 import { ButtonComponent } from '../ui/atoms/button.component';
 import { AlertComponent } from '../ui/molecules/alert.component';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 type Density = 'compact' | 'comfortable' | 'magazine';
 type ViewFilter = 'all' | 'unread' | 'saved';
@@ -53,6 +54,7 @@ const LOCAL_CAP = 1000;
     ChipComponent,
     ButtonComponent,
     AlertComponent,
+    TranslatePipe,
   ],
   template: `
     <div class="max-w-[768px] mx-auto">
@@ -137,10 +139,10 @@ const LOCAL_CAP = 1000;
             <app-skeleton variant="article"></app-skeleton>
           </div>
         } @else if (error() && articles().length === 0) {
-          <app-alert tone="danger" title="Error loading articles" [description]="error()!">
+          <app-alert tone="danger" [title]="'COMMON.ERROR_LOADING_ARTICLES' | translate" [description]="error()!">
             <div class="mt-3">
               <app-button variant="secondary" size="sm" (click)="loadArticles(true)">
-                Retry
+                {{ 'COMMON.RETRY' | translate }}
               </app-button>
             </div>
           </app-alert>
@@ -237,6 +239,7 @@ const LOCAL_CAP = 1000;
 export class ReaderComponent implements OnInit, OnDestroy {
   private feedsService = inject(FeedsService);
   private toast = inject(ToastService);
+  private translate = inject(TranslateService);
 
   articles = signal<any[]>([]);
   loading = signal(true);
@@ -523,7 +526,7 @@ export class ReaderComponent implements OnInit, OnDestroy {
       }
       console.error('Falha ao carregar artigos', err);
       if (reset) {
-        this.error.set(err?.message || (typeof err === 'string' ? err : 'Falha ao carregar artigos'));
+        this.error.set(err?.message || this.translate.instant('COMMON.ERROR_LOADING_ARTICLES_DESC'));
       } else {
         this.toast.error('Could not load more articles');
       }

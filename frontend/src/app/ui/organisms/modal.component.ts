@@ -8,6 +8,7 @@ import {
   output,
 } from '@angular/core';
 import { LucideX } from '@lucide/angular';
+import { getFocusableElements, handleFocusTrap } from '../../core/utils/focus-trap';
 
 @Component({
   selector: 'app-modal',
@@ -99,17 +100,8 @@ export class ModalComponent {
     });
   }
 
-  private getFocusableElements(): HTMLElement[] {
-    if (!this.modalPanel?.nativeElement) return [];
-    const selector =
-      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-    return Array.from(this.modalPanel.nativeElement.querySelectorAll<HTMLElement>(selector)).filter(
-      (el) => el.offsetParent !== null || el === this.closeButton?.nativeElement,
-    );
-  }
-
   private focusFirstElement() {
-    const focusables = this.getFocusableElements();
+    const focusables = getFocusableElements(this.modalPanel?.nativeElement);
     if (focusables.length > 0) {
       focusables[0].focus();
     } else {
@@ -142,26 +134,6 @@ export class ModalComponent {
   }
 
   onKeydown(event: KeyboardEvent) {
-    if (event.key !== 'Tab') return;
-    const focusables = this.getFocusableElements();
-    if (focusables.length === 0) {
-      event.preventDefault();
-      return;
-    }
-
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
-
-    if (event.shiftKey) {
-      if (document.activeElement === first || document.activeElement === this.modalPanel?.nativeElement) {
-        event.preventDefault();
-        last.focus();
-      }
-    } else {
-      if (document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    }
+    handleFocusTrap(event, this.modalPanel?.nativeElement);
   }
 }

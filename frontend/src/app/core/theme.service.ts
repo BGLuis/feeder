@@ -19,8 +19,13 @@ export class ThemeService {
         this.applyTheme(true);
       } else {
         // Check system preference without writing to localStorage
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        this.applyTheme(prefersDark);
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        this.applyTheme(mediaQuery.matches);
+        mediaQuery.addEventListener?.('change', (e) => {
+          if (!localStorage.getItem('theme')) {
+            this.applyTheme(e.matches);
+          }
+        });
       }
     }
   }

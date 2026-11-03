@@ -96,4 +96,19 @@ describe('authInterceptor', () => {
 
     expect(navigateSpy).not.toHaveBeenCalled();
   });
+
+  it('does not nest returnUrl if already on /login or /login?returnUrl=...', () => {
+    const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    Object.defineProperty(router, 'url', { value: '/login?returnUrl=%2Freader', configurable: true });
+
+    http.get('/api/protected').subscribe({
+      next: () => {},
+      error: () => {},
+    });
+
+    const req = httpMock.expectOne('/api/protected');
+    req.flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
+
+    expect(navigateSpy).toHaveBeenCalledWith(['/login'], undefined);
+  });
 });

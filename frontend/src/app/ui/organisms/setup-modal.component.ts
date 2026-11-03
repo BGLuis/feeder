@@ -6,6 +6,7 @@ import { LucideSun, LucideMoon } from '@lucide/angular';
 import { ThemeService } from '../../core/theme.service';
 import { ButtonComponent } from '../atoms/button.component';
 import { SelectComponent, SelectOption } from '../atoms/select.component';
+import { getFocusableElements, handleFocusTrap } from '../../core/utils/focus-trap';
 
 @Component({
   selector: 'app-setup-modal',
@@ -48,12 +49,14 @@ import { SelectComponent, SelectOption } from '../atoms/select.component';
 
             <!-- Theme -->
             <div class="flex flex-col gap-2">
-              <label class="text-label text-text-primary">
+              <span id="setup-theme-label" class="text-label text-text-primary">
                 {{ 'SETUP.THEME' | translate }}
-              </label>
-              <div class="grid grid-cols-2 gap-3">
+              </span>
+              <div class="grid grid-cols-2 gap-3" role="radiogroup" aria-labelledby="setup-theme-label">
                 <button
                   type="button"
+                  role="radio"
+                  [attr.aria-checked]="selectedTheme === 'dark'"
                   (click)="selectedTheme = 'dark'"
                   [class]="
                     selectedTheme === 'dark'
@@ -70,6 +73,8 @@ import { SelectComponent, SelectOption } from '../atoms/select.component';
 
                 <button
                   type="button"
+                  role="radio"
+                  [attr.aria-checked]="selectedTheme === 'light'"
                   (click)="selectedTheme = 'light'"
                   [class]="
                     selectedTheme === 'light'
@@ -133,15 +138,8 @@ export class SetupModalComponent implements OnInit {
     });
   }
 
-  private getFocusableElements(): HTMLElement[] {
-    if (!this.setupPanel?.nativeElement) return [];
-    const selector =
-      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-    return Array.from(this.setupPanel.nativeElement.querySelectorAll<HTMLElement>(selector));
-  }
-
   private focusFirstElement() {
-    const focusables = this.getFocusableElements();
+    const focusables = getFocusableElements(this.setupPanel?.nativeElement);
     if (focusables.length > 0) {
       focusables[0].focus();
     }
@@ -155,25 +153,7 @@ export class SetupModalComponent implements OnInit {
   }
 
   onKeydown(event: KeyboardEvent) {
-    if (event.key !== 'Tab') return;
-    const focusables = this.getFocusableElements();
-    if (focusables.length === 0) {
-      event.preventDefault();
-      return;
-    }
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
-    if (event.shiftKey) {
-      if (document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      }
-    } else {
-      if (document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    }
+    handleFocusTrap(event, this.setupPanel?.nativeElement);
   }
 
   ngOnInit() {
@@ -192,10 +172,10 @@ export class SetupModalComponent implements OnInit {
   }
 
   finishSetup() {
-    if (this.selectedTheme === 'dark' && !this.themeService.isDarkMode()) {
-      this.themeService.toggleTheme();
-    } else if (this.selectedTheme === 'light' && this.themeService.isDarkMode()) {
-      this.themeService.toggleTheme();
+    if (this.selectedTheme === 'dark') {
+      this.themeService.setDarkTheme();
+    } else {
+      this.themeService.setLightTheme();
     }
 
     localStorage.setItem('app_configured', 'true');

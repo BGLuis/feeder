@@ -28,7 +28,6 @@ import { SourceMarkComponent } from '../atoms/source-mark.component';
       <div class="flex items-center gap-4 min-w-0 flex-1">
         <app-source-mark
           [name]="title()"
-          [favicon]="faviconUrl()"
           size="lg"
         ></app-source-mark>
 
@@ -110,8 +109,6 @@ export class SubscriptionRowComponent {
     const misses = this.feed().source?.consecutiveMisses;
     return !misses || misses <= 0;
   });
-
-  faviconUrl = computed(() => null);
 
   nextFetchTime = computed(() => {
     const next = this.feed().source?.nextFetchAt;
