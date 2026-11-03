@@ -7,51 +7,51 @@ import { AppModule } from './app.module';
 import { setupApp } from './setup-app';
 
 async function bootstrap() {
-	const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-		bufferLogs: true,
-	});
-	const logger = app.get(Logger);
-	app.useLogger(logger);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bufferLogs: true,
+  });
+  const logger = app.get(Logger);
+  app.useLogger(logger);
 
-	// Trust 1 proxy hop (e.g. Nginx reverse proxy) so req.ip and ThrottlerGuard track the client IP
-	app.set('trust proxy', 1);
+  // Trust 1 proxy hop (e.g. Nginx reverse proxy) so req.ip and ThrottlerGuard track the client IP
+  app.set('trust proxy', 1);
 
-	// Playwright / BullMQ worker code can reject from detached promises. Node 24
-	// treats an unhandled rejection as fatal by default — for a long-running API
-	// that also hosts scraper workers, log it loudly but keep serving.
-	process.on('unhandledRejection', (reason) => {
-		logger.error(
-			`Unhandled promise rejection: ${
-				reason instanceof Error ? reason.stack : String(reason)
-			}`,
-		);
-	});
+  // Playwright / BullMQ worker code can reject from detached promises. Node 24
+  // treats an unhandled rejection as fatal by default — for a long-running API
+  // that also hosts scraper workers, log it loudly but keep serving.
+  process.on('unhandledRejection', (reason) => {
+    logger.error(
+      `Unhandled promise rejection: ${
+        reason instanceof Error ? reason.stack : String(reason)
+      }`,
+    );
+  });
 
-	app.use(helmet());
+  app.use(helmet());
 
-	const allowedOrigins = (
-		process.env.ALLOWED_ORIGINS ?? 'http://localhost:4200'
-	)
-		.split(',')
-		.map((o) => o.trim())
-		.filter(Boolean);
-	app.enableCors({ origin: allowedOrigins, credentials: false });
+  const allowedOrigins = (
+    process.env.ALLOWED_ORIGINS ?? 'http://localhost:4200'
+  )
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+  app.enableCors({ origin: allowedOrigins, credentials: false });
 
-	setupApp(app);
+  setupApp(app);
 
-	if ((process.env.ENABLE_SWAGGER ?? 'true') !== 'false') {
-		const config = new DocumentBuilder()
-			.setTitle('Feeder API')
-			.setDescription('The Feeder API documentation')
-			.setVersion('1.0')
-			.addBearerAuth()
-			.build();
-		const document = SwaggerModule.createDocument(app, config);
-		SwaggerModule.setup('api/docs', app, document);
-	}
+  if ((process.env.ENABLE_SWAGGER ?? 'true') !== 'false') {
+    const config = new DocumentBuilder()
+      .setTitle('Feeder API')
+      .setDescription('The Feeder API documentation')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document);
+  }
 
-	app.enableShutdownHooks();
+  app.enableShutdownHooks();
 
-	await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();
