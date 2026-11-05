@@ -5,6 +5,7 @@ import { AuthService } from '../core/auth.service';
 import { FormsModule } from '@angular/forms';
 import { ButtonComponent } from '../ui/atoms/button.component';
 import { AlertComponent } from '../ui/molecules/alert.component';
+import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-register',
@@ -15,6 +16,7 @@ import { AlertComponent } from '../ui/molecules/alert.component';
     RouterLink,
     ButtonComponent,
     AlertComponent,
+    TranslatePipe,
   ],
   template: `
     <app-auth-layout>
@@ -32,11 +34,13 @@ import { AlertComponent } from '../ui/molecules/alert.component';
               </p>
             </div>
 
-            <div class="space-y-5">
+            <form (ngSubmit)="onRegister()" class="space-y-5">
               <div class="space-y-1.5 text-left">
-                <label class="text-label text-text-primary block">Email</label>
+                <label for="register-email" class="text-label text-text-primary block">Email</label>
                 <input
+                  id="register-email"
                   type="email"
+                  name="email"
                   placeholder="name@example.com"
                   [ngModel]="email()"
                   (ngModelChange)="email.set($event)"
@@ -45,9 +49,11 @@ import { AlertComponent } from '../ui/molecules/alert.component';
               </div>
 
               <div class="space-y-1.5 text-left">
-                <label class="text-label text-text-primary block">Password</label>
+                <label for="register-password" class="text-label text-text-primary block">Password</label>
                 <input
+                  id="register-password"
                   type="password"
+                  name="password"
                   placeholder="••••••••"
                   [ngModel]="password()"
                   (ngModelChange)="password.set($event)"
@@ -61,7 +67,7 @@ import { AlertComponent } from '../ui/molecules/alert.component';
 
               <div class="pt-2">
                 <app-button
-                  (click)="onRegister()"
+                  type="submit"
                   [disabled]="loading() || !email() || !password()"
                   variant="primary"
                   size="lg"
@@ -75,14 +81,14 @@ import { AlertComponent } from '../ui/molecules/alert.component';
                   Sign Up
                 </app-button>
               </div>
-            </div>
+            </form>
 
             <p class="text-center text-body-sm text-text-secondary mt-8">
               Already have an account?
               <a
                 routerLink="/login"
                 class="text-text-accent hover:underline font-medium transition-colors ml-1"
-                >Sign in</a
+                >{{ 'AUTH.SIGN_IN' | translate }}</a
               >
             </p>
           </div>

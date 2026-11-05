@@ -1,5 +1,6 @@
-import { Component, computed, input, output, signal } from '@angular/core';
+import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { TranslateService, TranslatePipe } from '@ngx-translate/core';
 import {
   LucideBookmark,
   LucideExternalLink,
@@ -15,6 +16,7 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
   standalone: true,
   imports: [
     CommonModule,
+    TranslatePipe,
     LucideBookmark,
     LucideExternalLink,
     LucideCheck,
@@ -65,7 +67,8 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
             (click)="toggleSave.emit(article())"
             class="press p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
             [class.text-icon-accent]="isSaved()"
-            [title]="isSaved() ? 'Remover dos salvos' : 'Salvar artigo'"
+            [title]="isSaved() ? ('ARTICLE.REMOVE_SAVED' | translate) : ('ARTICLE.SAVE' | translate)"
+            [attr.aria-label]="isSaved() ? ('ARTICLE.REMOVE_SAVED' | translate) : ('ARTICLE.SAVE' | translate)"
           >
             <svg lucideBookmark class="w-4 h-4" [class.fill-current]="isSaved()"></svg>
           </button>
@@ -74,7 +77,8 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
             (click)="markRead.emit(article())"
             class="press p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
             [class.text-icon-accent]="isRead()"
-            [title]="isRead() ? 'Marcar como não lido' : 'Marcar como lido'"
+            [title]="isRead() ? ('ARTICLE.MARK_UNREAD' | translate) : ('ARTICLE.MARK_READ' | translate)"
+            [attr.aria-label]="isRead() ? ('ARTICLE.MARK_UNREAD' | translate) : ('ARTICLE.MARK_READ' | translate)"
           >
             <svg lucideCheck class="w-4 h-4"></svg>
           </button>
@@ -84,7 +88,8 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
             rel="noopener"
             (click)="onOpen($event)"
             class="press p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
-            title="Abrir link externo"
+            [title]="'ARTICLE.OPEN_EXTERNAL' | translate"
+            [attr.aria-label]="'ARTICLE.OPEN_EXTERNAL' | translate"
           >
             <svg lucideExternalLink class="w-4 h-4"></svg>
           </a>
@@ -121,7 +126,8 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
               (click)="toggleSave.emit(article())"
               class="press p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
               [class.text-icon-accent]="isSaved()"
-              [title]="isSaved() ? 'Remover dos salvos' : 'Salvar artigo'"
+              [title]="isSaved() ? ('ARTICLE.REMOVE_SAVED' | translate) : ('ARTICLE.SAVE' | translate)"
+              [attr.aria-label]="isSaved() ? ('ARTICLE.REMOVE_SAVED' | translate) : ('ARTICLE.SAVE' | translate)"
             >
               <svg lucideBookmark class="w-4 h-4" [class.fill-current]="isSaved()"></svg>
             </button>
@@ -130,7 +136,8 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
               (click)="markRead.emit(article())"
               class="press p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
               [class.text-icon-accent]="isRead()"
-              [title]="isRead() ? 'Marcar como não lido' : 'Marcar como lido'"
+              [title]="isRead() ? ('ARTICLE.MARK_UNREAD' | translate) : ('ARTICLE.MARK_READ' | translate)"
+              [attr.aria-label]="isRead() ? ('ARTICLE.MARK_UNREAD' | translate) : ('ARTICLE.MARK_READ' | translate)"
             >
               <svg lucideCheck class="w-4 h-4"></svg>
             </button>
@@ -140,7 +147,8 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
               rel="noopener"
               (click)="onOpen($event)"
               class="press p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
-              title="Abrir link externo"
+              [title]="'ARTICLE.OPEN_EXTERNAL' | translate"
+              [attr.aria-label]="'ARTICLE.OPEN_EXTERNAL' | translate"
             >
               <svg lucideExternalLink class="w-4 h-4"></svg>
             </a>
@@ -197,7 +205,8 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
               (click)="toggleSave.emit(article())"
               class="press p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
               [class.text-icon-accent]="isSaved()"
-              [title]="isSaved() ? 'Remover dos salvos' : 'Salvar artigo'"
+              [title]="isSaved() ? ('ARTICLE.REMOVE_SAVED' | translate) : ('ARTICLE.SAVE' | translate)"
+              [attr.aria-label]="isSaved() ? ('ARTICLE.REMOVE_SAVED' | translate) : ('ARTICLE.SAVE' | translate)"
             >
               <svg lucideBookmark class="w-4 h-4" [class.fill-current]="isSaved()"></svg>
             </button>
@@ -206,7 +215,8 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
               (click)="markRead.emit(article())"
               class="press p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
               [class.text-icon-accent]="isRead()"
-              [title]="isRead() ? 'Marcar como não lido' : 'Marcar como lido'"
+              [title]="isRead() ? ('ARTICLE.MARK_UNREAD' | translate) : ('ARTICLE.MARK_READ' | translate)"
+              [attr.aria-label]="isRead() ? ('ARTICLE.MARK_UNREAD' | translate) : ('ARTICLE.MARK_READ' | translate)"
             >
               <svg lucideCheck class="w-4 h-4"></svg>
             </button>
@@ -216,7 +226,8 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
               rel="noopener"
               (click)="onOpen($event)"
               class="press p-1.5 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-hover transition-colors"
-              title="Abrir link externo"
+              [title]="'ARTICLE.OPEN_EXTERNAL' | translate"
+              [attr.aria-label]="'ARTICLE.OPEN_EXTERNAL' | translate"
             >
               <svg lucideExternalLink class="w-4 h-4"></svg>
             </a>
@@ -266,6 +277,8 @@ export type ArticleDensity = 'compact' | 'comfortable' | 'magazine';
   `,
 })
 export class ArticleCardComponent {
+  private translate = inject(TranslateService, { optional: true });
+
   article = input.required<any>();
   density = input<ArticleDensity>('comfortable');
   isRead = input<boolean>(false);
@@ -290,14 +303,17 @@ export class ArticleCardComponent {
     if (!pub) return '';
     try {
       const d = new Date(pub);
-      const diffMs = Date.now() - d.getTime();
-      const diffMin = Math.floor(diffMs / 60000);
-      if (diffMin < 1) return 'now';
-      if (diffMin < 60) return `${diffMin}m`;
-      const diffHr = Math.floor(diffMin / 60);
-      if (diffHr < 24) return `${diffHr}h`;
-      const diffDay = Math.floor(diffHr / 24);
-      return `${diffDay}d`;
+      const diffSec = Math.round((d.getTime() - Date.now()) / 1000);
+      const lang = this.translate?.getCurrentLang() || this.translate?.getFallbackLang() || 'en';
+      const rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'auto' });
+      const absSec = Math.abs(diffSec);
+      if (absSec < 60) return rtf.format(diffSec, 'second');
+      const diffMin = Math.round(diffSec / 60);
+      if (Math.abs(diffMin) < 60) return rtf.format(diffMin, 'minute');
+      const diffHr = Math.round(diffMin / 60);
+      if (Math.abs(diffHr) < 24) return rtf.format(diffHr, 'hour');
+      const diffDay = Math.round(diffHr / 24);
+      return rtf.format(diffDay, 'day');
     } catch {
       return '';
     }

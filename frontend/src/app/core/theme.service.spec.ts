@@ -39,6 +39,11 @@ describe('ThemeService', () => {
     service = TestBed.inject(ThemeService);
   });
 
+  it('does not write to localStorage on first load with no stored value', () => {
+    expect(mockStorage['theme']).toBeUndefined();
+    expect(globalThis.localStorage.getItem('theme')).toBeNull();
+  });
+
   it('sets dark theme, adds dark class to documentElement and saves to localStorage', () => {
     service.setDarkTheme();
     expect(service.isDarkMode()).toBe(true);

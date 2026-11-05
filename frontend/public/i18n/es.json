@@ -20,7 +20,14 @@
     "REFRESH": "Actualizar",
     "SYNC_NOW": "Sincronizar ahora",
     "HEALTHY": "Saludable",
-    "ERROR": "Error"
+    "ERROR": "Error",
+    "RETRY": "Reintentar",
+    "ERROR_LOADING_FEEDS": "Error al cargar feeds",
+    "ERROR_LOADING_FEEDS_DESC": "No se pudieron cargar los feeds. Comprueba tu conexión e inténtalo de nuevo.",
+    "ERROR_LOADING_ARTICLES": "Error al cargar artículos",
+    "ERROR_LOADING_ARTICLES_DESC": "No se pudieron cargar los artículos. Comprueba tu conexión e inténtalo de nuevo.",
+    "ERROR_LOADING_WEBHOOKS": "Error al cargar webhooks",
+    "ERROR_LOADING_WEBHOOKS_DESC": "No se pudieron cargar los webhooks. Comprueba tu conexión e inténtalo de nuevo."
   },
   "SETTINGS": {
     "PREFERENCES_TITLE": "Preferencias de la aplicación",
@@ -35,5 +42,21 @@
     "DARK": "Oscuro",
     "LIGHT": "Claro",
     "FINISH": "Finalizar Configuración"
+  },
+  "ARTICLE": {
+    "SAVE": "Guardar artículo",
+    "REMOVE_SAVED": "Quitar de guardados",
+    "MARK_READ": "Marcar como leído",
+    "MARK_UNREAD": "Marcar como no leído",
+    "OPEN_EXTERNAL": "Abrir enlace externo"
+  },
+  "AUTH": {
+    "SIGN_IN": "Iniciar sesión",
+    "SIGN_UP": "Registrarse"
+  },
+  "FEED": {
+    "FORCE_SYNC": "Forzar sincronización",
+    "EDIT_FEED": "Editar feed",
+    "DELETE_SUBSCRIPTION": "Eliminar suscripción"
   }
 }

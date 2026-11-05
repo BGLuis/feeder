@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { signal } from '@angular/core';
 import { AuthService } from './core/auth.service';
-import { provideTranslateService } from '@ngx-translate/core';
+import { provideTranslateService, TranslateService } from '@ngx-translate/core';
 import { App } from './app';
 
 describe('App', () => {
@@ -12,6 +12,7 @@ describe('App', () => {
       getItem: () => null,
       setItem: () => undefined,
       removeItem: () => undefined,
+      clear: () => undefined,
     });
     await TestBed.configureTestingModule({
       imports: [App],
@@ -25,5 +26,20 @@ describe('App', () => {
     const fixture = TestBed.createComponent(App);
     const app = fixture.componentInstance;
     expect(app).toBeTruthy();
+  });
+
+  it('should use saved language from localStorage if present', () => {
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => (key === 'lang' ? 'es' : null),
+      setItem: () => undefined,
+      removeItem: () => undefined,
+      clear: () => undefined,
+    });
+    const translate = TestBed.inject(TranslateService);
+    const useSpy = vi.spyOn(translate, 'use');
+
+    const fixture = TestBed.createComponent(App);
+    expect(fixture.componentInstance).toBeTruthy();
+    expect(useSpy).toHaveBeenCalledWith('es');
   });
 });

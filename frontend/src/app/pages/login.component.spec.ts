@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { LoginComponent } from './login.component';
 import { AuthService } from '../core/auth.service';
 import { Router, provideRouter } from '@angular/router';
+import { provideTranslateService } from '@ngx-translate/core';
 
 class MockAuthService {
   loginArgs: any[] = [];
@@ -33,14 +34,23 @@ describe('LoginComponent', () => {
       imports: [LoginComponent],
       providers: [
         { provide: AuthService, useValue: authServiceMock },
-        provideRouter([])
+        provideRouter([]),
+        provideTranslateService(),
       ]
     }).compileComponents();
 
-    navigateSpy = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    navigateSpy = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
     fixture = TestBed.createComponent(LoginComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+  });
+
+  it('should dispatch submit on the form and run onLogin', async () => {
+    const onLoginSpy = vi.spyOn(component, 'onLogin');
+    const form = fixture.nativeElement.querySelector('form');
+    expect(form).toBeTruthy();
+    form.dispatchEvent(new Event('submit'));
+    expect(onLoginSpy).toHaveBeenCalled();
   });
 
   it('should show error message on login failure', async () => {
@@ -61,7 +71,7 @@ describe('LoginComponent', () => {
     component.password.set('correct');
     await component.onLogin();
     
-    expect(navigateSpy).toHaveBeenCalledWith(['/']);
+    expect(navigateSpy).toHaveBeenCalledWith('/');
     expect(component.errorMessage()).toBe('');
   });
 

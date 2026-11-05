@@ -57,8 +57,8 @@ npx lefthook install                 # enable git hooks once after clone
 ```
 
 `lefthook` pre-commit runs `secretlint` on staged files and `biome check --write` on staged
-`*.{js,ts,cjs,mjs,json}` — expect Biome to reformat staged backend/frontend files against the
-**root** style, which differs from each app's own Prettier config. Commits must follow
+`*.{js,ts,cjs,mjs,json}` — Biome checks root files while excluding `backend/` and `frontend/`
+(which enforce their own Prettier/ESLint styles). Commits must follow
 Conventional Commits; scope must be one of `back|front|infra|docs|deps|repo|db|scripts|config`
 and the header ≤ 100 chars.
 
@@ -68,7 +68,7 @@ and the header ≤ 100 chars.
 `autoLoadEntities`, `synchronize: false` and `migrationsRun: true` in production with migrations
 under `backend/src/migrations/` managed via `npm run migration:*`, while non-production uses
 `synchronize: true` with automated pre-synchronization deduplication), `BullModule` (Redis connection),
-`FeedsModule`, `ScraperModule`, `WebhooksModule`, `LoggingModule`, `HealthModule`.
+`ScheduleModule`, plus feature modules `AuthModule`, `FeedsModule`, `ScraperModule`, `WebhooksModule`, `LoggingModule`.
 
 ### The scraping pipeline (core flow)
 
@@ -141,15 +141,9 @@ Angular 22, **standalone components**, bootstrapped in `src/app/app.config.ts` (
 - Follow `gemini.md` (project's 12-rule working agreement, in Portuguese): make surgical
   changes, match existing style ("Clean Code + standard NestJS", **not** strict Hexagonal),
   put throwaway scripts in `.ai-scripts/`, always use Docker for orchestration, fail loudly.
-- **Vendored / drifting modules**: `backend/src/{config,logging,health,redis,encryption,common}`
-  were copied from another project ("gatuno"). `config/app-config.schema.ts` is that project's
-  Joi schema (requires `DB_TYPE`, `API_URL`, `USERADMIN_EMAIL`, Kafka/MQTT/RustFS vars…) and
-  does **not** match Feeder's `.env` / `.env.example`. `LoggingModule` and `HealthModule` are
-  imported by `AppModule` and pull in `AppConfigModule`. Before assuming these work, verify
-  `cd backend && npm run start:dev` actually boots; prefer `feeds/`, `scraper/`, `webhooks/`,
-  `auth/` as the source of truth for real Feeder behavior.
-- Backend TS path aliases exist (`@config/*`, `@redis/*`, `@common/*`, `@/*`, …) but are only
-  used by the vendored modules; feature code uses relative imports.
+- **Vendored / legacy cleanup**: Unused modules from initial scaffolding (`health`, `redis`, `encryption`,
+  unused config schemas) have been pruned. Active features live cleanly in `feeds/`, `scraper/`,
+  `webhooks/`, `auth/`, and `logging/` with relative imports.
 - **Database Migrations**: Production uses TypeORM migrations (`backend/src/migrations/`, `npm run migration:*`)
   with `synchronize: false` and `migrationsRun: true`. Non-production uses `synchronize: true` with a pre-sync
   deduplication hook.
