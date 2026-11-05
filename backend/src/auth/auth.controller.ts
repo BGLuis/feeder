@@ -13,6 +13,7 @@ import { Public } from './public.decorator';
 import {
   LoginDto,
   PasskeyOptionsDto,
+  PasskeyRegistrationVerifyDto,
   PasskeyVerifyDto,
   RegisterDto,
   UpdateProfileDto,
@@ -42,7 +43,7 @@ export class AuthController {
   @Throttle(AUTH_THROTTLE)
   @Post('passkey/options')
   async generatePasskeyOptions(@Body() body: PasskeyOptionsDto) {
-    return this.authService.generatePasskeyOptions(body.email, body.action);
+    return this.authService.generatePasskeyOptions(body.email);
   }
 
   @Public()
@@ -50,6 +51,24 @@ export class AuthController {
   @Post('passkey/verify')
   async verifyPasskey(@Body() body: PasskeyVerifyDto) {
     return this.authService.verifyPasskey(body.email, body.clientResponse);
+  }
+
+  @Throttle(AUTH_THROTTLE)
+  @Post('passkey/register/options')
+  async generatePasskeyRegistrationOptions(@Request() req: any) {
+    return this.authService.generatePasskeyRegistrationOptions(req.user.id);
+  }
+
+  @Throttle(AUTH_THROTTLE)
+  @Post('passkey/register/verify')
+  async verifyPasskeyRegistration(
+    @Request() req: any,
+    @Body() body: PasskeyRegistrationVerifyDto,
+  ) {
+    return this.authService.verifyPasskeyRegistration(
+      req.user.id,
+      body.clientResponse,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
