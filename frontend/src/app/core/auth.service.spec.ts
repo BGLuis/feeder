@@ -41,6 +41,25 @@ describe('AuthService', () => {
     expect(localStorage.getItem('access_token')).toBe('fake-jwt-token');
   });
 
+  it('asks for passkey sign-in options without a registration action', async () => {
+    const promise = service.loginWithPasskey('test@test.com');
+    const req = httpTesting.expectOne('/api/auth/passkey/options');
+    expect(req.request.body).toEqual({ email: 'test@test.com' });
+    req.flush('Unavailable', { status: 503, statusText: 'Unavailable' });
+
+    await expect(promise).rejects.toMatchObject({ status: 503 });
+  });
+
+  it('registers a passkey through the session route, without sending an email', async () => {
+    const promise = service.registerPasskey();
+    const req = httpTesting.expectOne('/api/auth/passkey/register/options');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({});
+    req.flush('Unavailable', { status: 503, statusText: 'Unavailable' });
+
+    await expect(promise).rejects.toMatchObject({ status: 503 });
+  });
+
   it('should propagate error on failed login', async () => {
     const promise = service.login('test@test.com', 'wrong');
     const req = httpTesting.expectOne('/api/auth/login');

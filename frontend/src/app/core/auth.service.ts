@@ -90,7 +90,7 @@ export class AuthService {
   async loginWithPasskey(email: string) {
     // 1) Pegar opções
     const options = await firstValueFrom(
-      this.http.post<any>(`${this.apiUrl}/passkey/options`, { email, action: 'authenticate' })
+      this.http.post<any>(`${this.apiUrl}/passkey/options`, { email })
     );
 
     // 2) Chamar biometria no browser
@@ -109,25 +109,20 @@ export class AuthService {
     return verifyRes;
   }
 
-  async registerPasskey(email: string) {
-    // 1) Pegar opções (Happy path Registration)
+  async registerPasskey() {
+    // 1) Pegar opções (o backend usa o usuário do token)
     const options = await firstValueFrom(
-      this.http.post<any>(`${this.apiUrl}/passkey/options`, { email, action: 'register' })
+      this.http.post<any>(`${this.apiUrl}/passkey/register/options`, {})
     );
 
     // 2) Chamar biometria no browser
     const attResp = await startRegistration({ optionsJSON: options });
 
-    // 3) Verificar e pegar JWT
-    const verifyRes = await firstValueFrom(
-      this.http.post<AuthResponse>(`${this.apiUrl}/passkey/verify`, {
-        email,
+    // 3) Verificar e vincular a passkey à conta logada
+    return firstValueFrom(
+      this.http.post<{ verified: boolean }>(`${this.apiUrl}/passkey/register/verify`, {
         clientResponse: attResp
-      }).pipe(
-        tap(res => this.saveToken(res))
-      )
+      })
     );
-
-    return verifyRes;
   }
 }

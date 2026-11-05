@@ -1,5 +1,4 @@
 import {
-  IsIn,
   IsObject,
   IsOptional,
   IsString,
@@ -43,10 +42,6 @@ export class PasskeyOptionsDto {
   @Matches(EMAIL_RE, EMAIL_MSG)
   @MaxLength(254)
   email: string;
-
-  @IsOptional()
-  @IsIn(['register', 'authenticate'])
-  action?: 'register' | 'authenticate';
 }
 
 export class PasskeyVerifyDto {
@@ -54,6 +49,11 @@ export class PasskeyVerifyDto {
   @MaxLength(254)
   email: string;
 
+  @IsObject()
+  clientResponse: Record<string, any>;
+}
+
+export class PasskeyRegistrationVerifyDto {
   @IsObject()
   clientResponse: Record<string, any>;
 }

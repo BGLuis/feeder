@@ -97,44 +97,21 @@ export class AuthService implements OnModuleDestroy {
     };
   }
 
-  async generatePasskeyOptions(
-    email: string,
-    action: 'register' | 'authenticate' = 'authenticate',
-  ) {
+  async generatePasskeyOptions(email: string) {
     email = this.normalizeEmail(email);
-    let user = await this.userRepository.findOne({
+    const user = await this.userRepository.findOne({
       where: { email },
       relations: { credentials: true },
     });
-    let options;
 
-    if (!user || action === 'register') {
-      if (!user) {
-        user = new User();
-        user.email = email;
-        await this.userRepository.save(user);
-      }
-
-      options = await generateRegistrationOptions({
-        rpName: this.rpName,
-        rpID: this.rpID,
-        userName: email,
-        attestationType: 'none',
-        authenticatorSelection: {
-          residentKey: 'preferred',
-          userVerification: 'required',
-        },
-      });
-    } else {
-      options = await generateAuthenticationOptions({
-        rpID: this.rpID,
-        allowCredentials:
-          user.credentials?.map((cred) => ({
-            id: cred.credentialID,
-          })) || [],
-        userVerification: 'required',
-      });
-    }
+    const options = await generateAuthenticationOptions({
+      rpID: this.rpID,
+      allowCredentials:
+        user?.credentials?.map((cred) => ({
+          id: cred.credentialID,
+        })) || [],
+      userVerification: 'required',
+    });
 
     await this.redisClient.set(
       `webauthn_challenge:${email}`,
@@ -162,56 +139,97 @@ export class AuthService implements OnModuleDestroy {
     // so a failed attempt cannot be replayed within the TTL.
     await this.redisClient.del(challengeKey);
 
-    let verification;
+    const credential = user.credentials?.find(
+      (c) => c.credentialID === clientResponse.id,
+    );
+    if (!credential) throw new UnauthorizedException('Credential not found');
 
-    if (clientResponse.response && clientResponse.response.attestationObject) {
-      verification = await verifyRegistrationResponse({
-        response: clientResponse,
-        expectedChallenge,
-        expectedOrigin: this.origin,
-        expectedRPID: this.rpID,
-        requireUserVerification: true,
-      });
+    const verification = await verifyAuthenticationResponse({
+      response: clientResponse,
+      expectedChallenge,
+      expectedOrigin: this.origin,
+      expectedRPID: this.rpID,
+      requireUserVerification: true,
+      credential: {
+        id: credential.credentialID,
+        publicKey: new Uint8Array(credential.credentialPublicKey),
+        counter: credential.counter,
+      },
+    });
 
-      if (verification.verified && verification.registrationInfo) {
-        const { credential } = verification.registrationInfo;
-        const newCred = new UserCredential();
-        newCred.user = user;
-        newCred.credentialID = credential.id;
-        newCred.credentialPublicKey = Buffer.from(credential.publicKey);
-        newCred.counter = credential.counter;
-        await this.credentialRepository.save(newCred);
-      }
-    } else {
-      const credential = user.credentials?.find(
-        (c) => c.credentialID === clientResponse.id,
-      );
-      if (!credential) throw new UnauthorizedException('Credential not found');
-
-      verification = await verifyAuthenticationResponse({
-        response: clientResponse,
-        expectedChallenge,
-        expectedOrigin: this.origin,
-        expectedRPID: this.rpID,
-        requireUserVerification: true,
-        credential: {
-          id: credential.credentialID,
-          publicKey: new Uint8Array(credential.credentialPublicKey),
-          counter: credential.counter,
-        },
-      });
-
-      if (verification.verified && verification.authenticationInfo) {
-        credential.counter = verification.authenticationInfo.newCounter;
-        await this.credentialRepository.save(credential);
-      }
-    }
-
-    if (verification.verified) {
+    if (verification.verified && verification.authenticationInfo) {
+      credential.counter = verification.authenticationInfo.newCounter;
+      await this.credentialRepository.save(credential);
       return { access_token: this.jwtService.sign(this.buildPayload(user)) };
     }
 
     throw new UnauthorizedException('Verification failed');
+  }
+
+  // Registration is only reachable with a session: the target account comes
+  // from the JWT, so nobody can attach a passkey to an account they don't hold.
+  async generatePasskeyRegistrationOptions(userId: string) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: { credentials: true },
+    });
+    if (!user) throw new UnauthorizedException('User not found');
+
+    const options = await generateRegistrationOptions({
+      rpName: this.rpName,
+      rpID: this.rpID,
+      userName: user.email,
+      attestationType: 'none',
+      excludeCredentials: user.credentials?.map((cred) => ({
+        id: cred.credentialID,
+      })),
+      authenticatorSelection: {
+        residentKey: 'preferred',
+        userVerification: 'required',
+      },
+    });
+
+    await this.redisClient.set(
+      `webauthn_registration_challenge:${user.id}`,
+      options.challenge,
+      'EX',
+      300,
+    );
+    return options;
+  }
+
+  async verifyPasskeyRegistration(userId: string, clientResponse: any) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) throw new UnauthorizedException('User not found');
+
+    const challengeKey = `webauthn_registration_challenge:${user.id}`;
+    const expectedChallenge = await this.redisClient.get(challengeKey);
+    if (!expectedChallenge)
+      throw new BadRequestException('Challenge expired or not found');
+    await this.redisClient.del(challengeKey);
+
+    // 400, not 401: the frontend interceptor ends the session on any 401, and a
+    // cancelled or invalid authenticator response must not log the user out.
+    const verification = await verifyRegistrationResponse({
+      response: clientResponse,
+      expectedChallenge,
+      expectedOrigin: this.origin,
+      expectedRPID: this.rpID,
+      requireUserVerification: true,
+    }).catch(() => null);
+    if (!verification?.verified || !verification.registrationInfo) {
+      throw new BadRequestException('Passkey verification failed');
+    }
+
+    const { credential } = verification.registrationInfo;
+    const newCred = new UserCredential();
+    newCred.user = user;
+    newCred.credentialID = credential.id;
+    newCred.credentialPublicKey = Buffer.from(credential.publicKey);
+    newCred.counter = credential.counter;
+    await this.credentialRepository.save(newCred);
+
+    return { verified: true };
   }
 
   async updateProfile(userId: string, name?: string, email?: string) {

@@ -279,14 +279,9 @@ export class SettingsComponent {
   async setupPasskey() {
     this.errorMessage.set('');
     this.successMessage.set('');
-    const email = this.authService.currentUser()?.email;
-    if (!email) {
-      this.errorMessage.set('Email is required to setup a passkey.');
-      return;
-    }
 
     try {
-      await this.authService.registerPasskey(email);
+      await this.authService.registerPasskey();
       this.successMessage.set('Passkey registered successfully!');
     } catch (err: any) {
       this.errorMessage.set(
