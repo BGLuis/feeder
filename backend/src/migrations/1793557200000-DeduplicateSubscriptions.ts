@@ -8,47 +8,17 @@ export class DeduplicateSubscriptions1793557200000 implements MigrationInterface
     // 1. Merge tags for duplicate subscriptions and remove duplicate rows
     await deduplicateSubscriptions(queryRunner);
 
-    // 2. Drop the non-unique index and promote to UNIQUE
-    try {
-      await queryRunner.query(
-        `DROP INDEX \`IDX_40e9f10fab4aba3b1baedd2441\` ON \`subscription\``,
-      );
-    } catch (e: any) {
-      if (e?.errno !== 1091 && e?.code !== 'ER_CANT_DROP_FIELD_OR_KEY') {
-        throw e;
-      }
-    }
-
-    try {
-      await queryRunner.query(
-        `CREATE UNIQUE INDEX \`IDX_40e9f10fab4aba3b1baedd2441\` ON \`subscription\` (\`userId\`, \`sourceId\`)`,
-      );
-    } catch (e: any) {
-      if (e?.errno !== 1061 && e?.code !== 'ER_DUP_KEYNAME') {
-        throw e;
-      }
-    }
+    // 2. Promote the index to UNIQUE. It also backs the userId foreign key,
+    // so MySQL refuses a standalone DROP INDEX; dropping and re-adding it in
+    // one ALTER TABLE keeps the foreign key covered throughout.
+    await queryRunner.query(
+      `ALTER TABLE \`subscription\` DROP INDEX \`IDX_40e9f10fab4aba3b1baedd2441\`, ADD UNIQUE INDEX \`IDX_40e9f10fab4aba3b1baedd2441\` (\`userId\`, \`sourceId\`)`,
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    try {
-      await queryRunner.query(
-        `DROP INDEX \`IDX_40e9f10fab4aba3b1baedd2441\` ON \`subscription\``,
-      );
-    } catch (e: any) {
-      if (e?.errno !== 1091 && e?.code !== 'ER_CANT_DROP_FIELD_OR_KEY') {
-        throw e;
-      }
-    }
-
-    try {
-      await queryRunner.query(
-        `CREATE INDEX \`IDX_40e9f10fab4aba3b1baedd2441\` ON \`subscription\` (\`userId\`, \`sourceId\`)`,
-      );
-    } catch (e: any) {
-      if (e?.errno !== 1061 && e?.code !== 'ER_DUP_KEYNAME') {
-        throw e;
-      }
-    }
+    await queryRunner.query(
+      `ALTER TABLE \`subscription\` DROP INDEX \`IDX_40e9f10fab4aba3b1baedd2441\`, ADD INDEX \`IDX_40e9f10fab4aba3b1baedd2441\` (\`userId\`, \`sourceId\`)`,
+    );
   }
 }
