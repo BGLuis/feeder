@@ -13,6 +13,7 @@ import { UserArticleState } from '../src/feeds/entities/user-article-state.entit
 import { FeedsScheduler } from '../src/feeds/feeds.scheduler';
 import { InitialSchema1793557165894 } from '../src/migrations/1793557165894-InitialSchema';
 import { DeduplicateSubscriptions1793557200000 } from '../src/migrations/1793557200000-DeduplicateSubscriptions';
+import { WebhookSecretToText1793557300000 } from '../src/migrations/1793557300000-WebhookSecretToText';
 import { ScraperProcessor } from '../src/scraper/scraper.processor';
 import { Webhook } from '../src/webhooks/entities/webhook.entity';
 
@@ -54,6 +55,7 @@ describe('Ingestion pipeline against MySQL (e2e)', () => {
       migrations: [
         InitialSchema1793557165894,
         DeduplicateSubscriptions1793557200000,
+        WebhookSecretToText1793557300000,
       ],
       synchronize: false,
     }).initialize();

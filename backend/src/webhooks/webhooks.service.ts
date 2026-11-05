@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import * as crypto from 'crypto';
 import { Webhook } from './entities/webhook.entity';
 import { CreateWebhookDto, UpdateWebhookDto } from './dto/webhooks.dto';
+import { encryptSecret } from '../common/crypto/secret-box';
 
 @Injectable()
 export class WebhooksService {
@@ -15,17 +16,22 @@ export class WebhooksService {
     const webhook = new Webhook();
     webhook.user = { id: userId } as any;
     webhook.url = data.url;
-    webhook.secret = data.secret || crypto.randomBytes(32).toString('hex');
+    webhook.secret = encryptSecret(
+      data.secret || crypto.randomBytes(32).toString('hex'),
+    );
     webhook.triggerType = data.triggerType || 'ALL';
     webhook.triggerValue = data.triggerValue || '';
     webhook.payloadTemplate = data.payloadTemplate || '';
     webhook.isActive = true;
 
-    return this.webhookRepository.save(webhook);
+    return this.toPublic(await this.webhookRepository.save(webhook));
   }
 
   async findAll(userId: string) {
-    return this.webhookRepository.find({ where: { user: { id: userId } } });
+    const webhooks = await this.webhookRepository.find({
+      where: { user: { id: userId } },
+    });
+    return webhooks.map((w) => this.toPublic(w));
   }
 
   async update(userId: string, webhookId: string, data: UpdateWebhookDto) {
@@ -37,7 +43,7 @@ export class WebhooksService {
     if (data.url !== undefined) webhook.url = data.url;
     // DTO guarantees a non-empty secret of >= 16 chars when present; never
     // allow downgrading to an empty/weak signing key.
-    if (data.secret) webhook.secret = data.secret;
+    if (data.secret) webhook.secret = encryptSecret(data.secret);
     if (data.triggerType !== undefined) webhook.triggerType = data.triggerType;
     if (data.triggerValue !== undefined)
       webhook.triggerValue = data.triggerValue;
@@ -45,7 +51,7 @@ export class WebhooksService {
       webhook.payloadTemplate = data.payloadTemplate;
     if (data.isActive !== undefined) webhook.isActive = data.isActive;
 
-    return this.webhookRepository.save(webhook);
+    return this.toPublic(await this.webhookRepository.save(webhook));
   }
 
   async remove(userId: string, webhookId: string) {
@@ -53,5 +59,13 @@ export class WebhooksService {
       id: webhookId,
       user: { id: userId } as any,
     });
+  }
+
+  // The HMAC signing secret never leaves the server: it is write-only over the
+  // API. Strip it from everything returned to the client.
+  private toPublic(webhook: Webhook): Omit<Webhook, 'secret'> {
+    const { secret, ...rest } = webhook;
+    void secret;
+    return rest;
   }
 }

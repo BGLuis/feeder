@@ -1,8 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { Job } from 'bullmq';
+import * as crypto from 'crypto';
 import { WebhooksProcessor } from './webhooks.processor';
 import { safeFetch, SsrfBlockedError } from '../common/net/ssrf-guard';
+import { encryptSecret } from '../common/crypto/secret-box';
 
 jest.mock('../common/net/ssrf-guard', () => {
   const actual = jest.requireActual('../common/net/ssrf-guard');
@@ -80,5 +82,38 @@ describe('WebhooksProcessor', () => {
       /signing secret/,
     );
     expect(mockedSafeFetch).not.toHaveBeenCalled();
+  });
+
+  it('decrypts an encrypted secret before signing, never using the ciphertext as the key', async () => {
+    mockedSafeFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      body: null,
+    } as unknown as Response);
+
+    const plaintext = 'a-signing-secret-1234';
+    const encrypted = encryptSecret(plaintext);
+    expect(encrypted).not.toEqual(plaintext);
+    const payload = { hello: 'world' };
+
+    await processor.process(makeJob({ secret: encrypted, payload }));
+
+    const [, init] = mockedSafeFetch.mock.calls[0];
+    const headers = (init as any).headers;
+    const timestamp = headers['x-feeder-timestamp'];
+    const signed = headers['x-feeder-signature'].replace(/^t=\d+,v1=/, '');
+    const body = `${timestamp}.${JSON.stringify(payload)}`;
+
+    const expected = crypto
+      .createHmac('sha256', plaintext)
+      .update(body)
+      .digest('hex');
+    const wrong = crypto
+      .createHmac('sha256', encrypted)
+      .update(body)
+      .digest('hex');
+
+    expect(signed).toEqual(expected);
+    expect(signed).not.toEqual(wrong);
   });
 });
