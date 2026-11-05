@@ -3,12 +3,11 @@ services:
     image: mysql:8.4
     container_name: feeder-mysql-prod
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?set DB_ROOT_PASSWORD (e.g. openssl rand -hex 24)}
       MYSQL_DATABASE: ${DB_NAME:-feeder}
       MYSQL_USER: ${DB_USER:-feederuser}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-feederpassword}
-    ports:
-      - '3306:3306'
+      MYSQL_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD (e.g. openssl rand -hex 24)}
+    # Not published to the host: reachable only by other services on feeder_network.
     volumes:
       - mysql_data_prod:/var/lib/mysql
     networks:
@@ -29,14 +28,16 @@ services:
   redis:
     image: redis:7-alpine
     container_name: feeder-redis-prod
-    ports:
-      - '6379:6379'
+    # Password required and not published to the host: reachable only on feeder_network.
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD (e.g. openssl rand -hex 32)}
+    command: ["sh", "-c", "exec redis-server --requirepass \"$$REDIS_PASSWORD\""]
     volumes:
       - redis_data_prod:/data
     networks:
       - feeder_network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -58,10 +59,11 @@ services:
       - DB_HOST=mysql
       - DB_PORT=3306
       - DB_USER=${DB_USER:-feederuser}
-      - DB_PASSWORD=${DB_PASSWORD:-feederpassword}
+      - DB_PASSWORD=${DB_PASSWORD:?set DB_PASSWORD (e.g. openssl rand -hex 24)}
       - DB_NAME=${DB_NAME:-feeder}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:?set REDIS_PASSWORD (e.g. openssl rand -hex 32)}
       # No safe default in prod: env.validation.ts rejects a missing/short secret.
       - JWT_SECRET=${JWT_SECRET:?set JWT_SECRET (>=32 chars, e.g. openssl rand -hex 32)}
       - JWT_EXPIRATION=${JWT_EXPIRATION:-1d}
