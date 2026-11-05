@@ -68,7 +68,7 @@ import { ToggleComponent } from '../ui/atoms/toggle.component';
 
             <!-- Tags -->
             <div class="flex flex-col gap-1.5">
-              <label class="text-label text-text-primary">
+              <label for="discover-tags-input" class="text-label text-text-primary">
                 Tags
                 <span class="text-text-tertiary font-normal text-xs ml-1">(Press Enter or Comma)</span>
               </label>
@@ -84,6 +84,7 @@ import { ToggleComponent } from '../ui/atoms/toggle.component';
                   ></app-tag>
                 }
                 <input
+                  id="discover-tags-input"
                   type="text"
                   #tagInput
                   (keydown.enter)="

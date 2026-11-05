@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, effect, inject, signal } from '@angular/core';
 import { TranslateService, TranslatePipe } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -6,6 +6,7 @@ import { LucideSun, LucideMoon } from '@lucide/angular';
 import { ThemeService } from '../../core/theme.service';
 import { ButtonComponent } from '../atoms/button.component';
 import { SelectComponent, SelectOption } from '../atoms/select.component';
+import { getFocusableElements, handleFocusTrap } from '../../core/utils/focus-trap';
 
 @Component({
   selector: 'app-setup-modal',
@@ -13,11 +14,20 @@ import { SelectComponent, SelectOption } from '../atoms/select.component';
   imports: [CommonModule, FormsModule, TranslatePipe, LucideSun, LucideMoon, ButtonComponent, SelectComponent],
   template: `
     @if (isVisible()) {
-      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-overlay backdrop-blur-[4px]">
+      <div
+        #setupBackdrop
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-bg-overlay backdrop-blur-[4px]"
+        (keydown)="onKeydown($event)"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="setup-modal-title"
+        tabindex="-1"
+      >
         <div
+          #setupPanel
           class="bg-bg-surface border border-border-default rounded-3xl p-8 max-w-md w-full shadow-elevation-4 animate-in fade-in zoom-in-95 duration-200"
         >
-          <h2 class="text-heading-h2 font-medium text-text-primary mb-2">
+          <h2 id="setup-modal-title" class="text-heading-h2 font-medium text-text-primary mb-2">
             {{ 'SETUP.WELCOME' | translate }}
           </h2>
           <p class="text-body-sm text-text-secondary mb-8">
@@ -39,12 +49,14 @@ import { SelectComponent, SelectOption } from '../atoms/select.component';
 
             <!-- Theme -->
             <div class="flex flex-col gap-2">
-              <label class="text-label text-text-primary">
+              <span id="setup-theme-label" class="text-label text-text-primary">
                 {{ 'SETUP.THEME' | translate }}
-              </label>
-              <div class="grid grid-cols-2 gap-3">
+              </span>
+              <div class="grid grid-cols-2 gap-3" role="radiogroup" aria-labelledby="setup-theme-label">
                 <button
                   type="button"
+                  role="radio"
+                  [attr.aria-checked]="selectedTheme === 'dark'"
                   (click)="selectedTheme = 'dark'"
                   [class]="
                     selectedTheme === 'dark'
@@ -61,6 +73,8 @@ import { SelectComponent, SelectOption } from '../atoms/select.component';
 
                 <button
                   type="button"
+                  role="radio"
+                  [attr.aria-checked]="selectedTheme === 'light'"
                   (click)="selectedTheme = 'light'"
                   [class]="
                     selectedTheme === 'light'
@@ -105,6 +119,43 @@ export class SetupModalComponent implements OnInit {
     { label: 'Português', value: 'pt' },
   ];
 
+  @ViewChild('setupPanel') setupPanel?: ElementRef<HTMLElement>;
+  private previousActiveElement: HTMLElement | null = null;
+
+  constructor() {
+    effect(() => {
+      const visible = this.isVisible();
+      if (visible) {
+        if (typeof document !== 'undefined') {
+          this.previousActiveElement = document.activeElement as HTMLElement | null;
+        }
+        setTimeout(() => {
+          this.focusFirstElement();
+        }, 0);
+      } else {
+        this.restoreFocus();
+      }
+    });
+  }
+
+  private focusFirstElement() {
+    const focusables = getFocusableElements(this.setupPanel?.nativeElement);
+    if (focusables.length > 0) {
+      focusables[0].focus();
+    }
+  }
+
+  private restoreFocus() {
+    if (this.previousActiveElement && typeof this.previousActiveElement.focus === 'function') {
+      this.previousActiveElement.focus();
+      this.previousActiveElement = null;
+    }
+  }
+
+  onKeydown(event: KeyboardEvent) {
+    handleFocusTrap(event, this.setupPanel?.nativeElement);
+  }
+
   ngOnInit() {
     const isConfigured = localStorage.getItem('app_configured');
     if (!isConfigured) {
@@ -121,10 +172,10 @@ export class SetupModalComponent implements OnInit {
   }
 
   finishSetup() {
-    if (this.selectedTheme === 'dark' && !this.themeService.isDarkMode()) {
-      this.themeService.toggleTheme();
-    } else if (this.selectedTheme === 'light' && this.themeService.isDarkMode()) {
-      this.themeService.toggleTheme();
+    if (this.selectedTheme === 'dark') {
+      this.themeService.setDarkTheme();
+    } else {
+      this.themeService.setLightTheme();
     }
 
     localStorage.setItem('app_configured', 'true');

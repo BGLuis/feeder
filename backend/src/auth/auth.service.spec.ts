@@ -32,9 +32,9 @@ jest.mock('@simplewebauthn/server', () => ({
 
 describe('AuthService', () => {
   let service: AuthService;
-  let userRepository: any;
-  let credentialRepository: any;
-  let jwtService: any;
+  let userRepository: { findOne: jest.Mock; save: jest.Mock };
+  let credentialRepository: { save: jest.Mock };
+  let jwtService: { sign: jest.Mock };
 
   beforeEach(async () => {
     userRepository = { findOne: jest.fn(), save: jest.fn() };
@@ -368,6 +368,46 @@ describe('AuthService', () => {
       await expect(service.verifyPasskey('a@b.com', {})).rejects.toThrow(
         BadRequestException,
       );
+    });
+  });
+
+  describe('updateProfile', () => {
+    it('throws BadRequestException when user not found', async () => {
+      userRepository.findOne.mockResolvedValueOnce(null);
+
+      await expect(
+        service.updateProfile('u-missing', 'New Name'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws BadRequestException when email is already in use by another user', async () => {
+      userRepository.findOne
+        .mockResolvedValueOnce({ id: 'u-1', email: 'current@example.com' })
+        .mockResolvedValueOnce({ id: 'u-2', email: 'taken@example.com' });
+
+      await expect(
+        service.updateProfile('u-1', 'Name', 'taken@example.com'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('updates name and email, saves and returns access_token', async () => {
+      const user = { id: 'u-1', name: 'Old', email: 'old@example.com' };
+      userRepository.findOne
+        .mockResolvedValueOnce(user)
+        .mockResolvedValueOnce(null); // email not taken
+      userRepository.save.mockResolvedValueOnce(user);
+
+      const result = await service.updateProfile(
+        'u-1',
+        'New',
+        'new@example.com',
+      );
+
+      expect(user.name).toBe('New');
+      expect(user.email).toBe('new@example.com');
+      expect(userRepository.save).toHaveBeenCalledWith(user);
+      expect(result.message).toBe('Profile updated successfully');
+      expect(result.access_token).toBe('token');
     });
   });
 });

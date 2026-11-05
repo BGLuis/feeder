@@ -18,7 +18,12 @@ export class App {
     private translate: TranslateService,
     private themeService: ThemeService,
   ) {
-    const browserLang = this.translate.getBrowserLang();
-    this.translate.use(browserLang?.match(/en|es|pt/) ? browserLang : 'en');
+    const savedLang = typeof window !== 'undefined' ? localStorage.getItem('lang') : null;
+    if (savedLang && /^(en|es|pt)$/.test(savedLang)) {
+      this.translate.use(savedLang);
+    } else {
+      const browserLang = this.translate.getBrowserLang();
+      this.translate.use(browserLang?.match(/en|es|pt/) ? browserLang : 'en');
+    }
   }
 }

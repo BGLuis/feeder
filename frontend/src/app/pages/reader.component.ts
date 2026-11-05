@@ -23,6 +23,8 @@ import { SearchFieldComponent } from '../ui/atoms/search-field.component';
 import { SegmentedComponent, SegmentOption } from '../ui/atoms/segmented.component';
 import { ChipComponent } from '../ui/atoms/chip.component';
 import { ButtonComponent } from '../ui/atoms/button.component';
+import { AlertComponent } from '../ui/molecules/alert.component';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 type Density = 'compact' | 'comfortable' | 'magazine';
 type ViewFilter = 'all' | 'unread' | 'saved';
@@ -51,6 +53,8 @@ const LOCAL_CAP = 1000;
     SegmentedComponent,
     ChipComponent,
     ButtonComponent,
+    AlertComponent,
+    TranslatePipe,
   ],
   template: `
     <div class="max-w-[768px] mx-auto">
@@ -134,6 +138,14 @@ const LOCAL_CAP = 1000;
             <app-skeleton variant="article"></app-skeleton>
             <app-skeleton variant="article"></app-skeleton>
           </div>
+        } @else if (error() && articles().length === 0) {
+          <app-alert tone="danger" [title]="'COMMON.ERROR_LOADING_ARTICLES' | translate" [description]="error()!">
+            <div class="mt-3">
+              <app-button variant="secondary" size="sm" (click)="loadArticles(true)">
+                {{ 'COMMON.RETRY' | translate }}
+              </app-button>
+            </div>
+          </app-alert>
         } @else if (visibleGroups().length === 0) {
           <app-empty-state
             [title]="
@@ -227,9 +239,12 @@ const LOCAL_CAP = 1000;
 export class ReaderComponent implements OnInit, OnDestroy {
   private feedsService = inject(FeedsService);
   private toast = inject(ToastService);
+  private translate = inject(TranslateService);
 
   articles = signal<any[]>([]);
   loading = signal(true);
+  error = signal<string | null>(null);
+  private requestCounter = 0;
   tags = signal<string[]>([]);
   selectedTag = signal<string | null>(null);
 
@@ -483,10 +498,12 @@ export class ReaderComponent implements OnInit, OnDestroy {
       this.page.set(1);
       this.articles.set([]);
       this.hasMore.set(true);
+      this.error.set(null);
     }
     if (!this.hasMore()) return;
 
     this.loading.set(true);
+    const requestId = ++this.requestCounter;
     try {
       const response = await this.feedsService.getArticles(
         this.selectedTag() || undefined,
@@ -494,17 +511,29 @@ export class ReaderComponent implements OnInit, OnDestroy {
         this.page(),
         this.limit,
       );
+      if (requestId !== this.requestCounter) {
+        return;
+      }
       const newArticles = response.data || [];
       if (reset) this.articles.set(newArticles);
       else this.articles.update((prev) => [...prev, ...newArticles]);
 
       this.hasMore.set(response.page < response.totalPages);
       if (this.hasMore()) this.page.update((p) => p + 1);
-    } catch (err) {
+    } catch (err: any) {
+      if (requestId !== this.requestCounter) {
+        return;
+      }
       console.error('Falha ao carregar artigos', err);
-      if (!reset) this.toast.error('Could not load more articles');
+      if (reset) {
+        this.error.set(err?.message || this.translate.instant('COMMON.ERROR_LOADING_ARTICLES_DESC'));
+      } else {
+        this.toast.error('Could not load more articles');
+      }
     } finally {
-      this.loading.set(false);
+      if (requestId === this.requestCounter) {
+        this.loading.set(false);
+      }
     }
   }
 

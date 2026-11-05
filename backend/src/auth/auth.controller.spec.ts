@@ -5,6 +5,7 @@ import { JwtModule, JwtService } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
+import type { App } from 'supertest/types';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -13,7 +14,7 @@ import { JwtStrategy } from './jwt.strategy';
 const JWT_SECRET = 'test-secret-with-at-least-32-characters';
 
 describe('AuthController passkey routes', () => {
-  let app: INestApplication;
+  let app: INestApplication<App>;
   let token: string;
   const authService = {
     generatePasskeyOptions: jest.fn().mockResolvedValue({ challenge: 'c' }),
