@@ -20,8 +20,10 @@ import { SearchFieldComponent } from '../ui/atoms/search-field.component';
 import { ChipComponent } from '../ui/atoms/chip.component';
 import { TagComponent } from '../ui/atoms/tag.component';
 import { ButtonComponent } from '../ui/atoms/button.component';
+import { AlertComponent } from '../ui/molecules/alert.component';
 import { ModalComponent } from '../ui/organisms/modal.component';
 import { CodeEditorComponent, CodeTemplate } from '../ui/atoms/code-editor.component';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-dashboard',
@@ -38,8 +40,10 @@ import { CodeEditorComponent, CodeTemplate } from '../ui/atoms/code-editor.compo
     ChipComponent,
     TagComponent,
     ButtonComponent,
+    AlertComponent,
     ModalComponent,
     CodeEditorComponent,
+    TranslatePipe,
   ],
   template: `
     <div class="max-w-6xl mx-auto">
@@ -127,13 +131,21 @@ import { CodeEditorComponent, CodeTemplate } from '../ui/atoms/code-editor.compo
             </div>
           }
 
-          <!-- Content: Skeleton / Empty / List -->
+          <!-- Content: Skeleton / Error / Empty / List -->
           @if (loading()) {
             <div class="space-y-3">
               <app-skeleton variant="row"></app-skeleton>
               <app-skeleton variant="row"></app-skeleton>
               <app-skeleton variant="row"></app-skeleton>
             </div>
+          } @else if (error()) {
+            <app-alert tone="danger" [title]="'COMMON.ERROR_LOADING_FEEDS' | translate" [description]="error()!">
+              <div class="mt-3">
+                <app-button variant="secondary" size="sm" (click)="loadFeeds()">
+                  {{ 'COMMON.RETRY' | translate }}
+                </app-button>
+              </div>
+            </app-alert>
           } @else if (feeds().length === 0) {
             <app-empty-state
               title="No feeds yet"
@@ -182,8 +194,9 @@ import { CodeEditorComponent, CodeTemplate } from '../ui/atoms/code-editor.compo
         <div class="flex flex-col gap-5 py-2">
           <!-- Feed Name -->
           <div class="flex flex-col gap-1.5">
-            <label class="text-label text-text-primary">Feed Name</label>
+            <label for="edit-feed-name" class="text-label text-text-primary">Feed Name</label>
             <input
+              id="edit-feed-name"
               #editNameInput
               type="text"
               [value]="editingFeed()?.customName || editingFeed()?.source?.name || ''"
@@ -193,7 +206,7 @@ import { CodeEditorComponent, CodeTemplate } from '../ui/atoms/code-editor.compo
 
           <!-- Tags Input -->
           <div class="flex flex-col gap-1.5">
-            <label class="text-label text-text-primary">
+            <label for="edit-feed-tags" class="text-label text-text-primary">
               Tags
               <span class="text-text-tertiary text-xs font-normal ml-1">(Press Enter or Comma)</span>
             </label>
@@ -209,6 +222,7 @@ import { CodeEditorComponent, CodeTemplate } from '../ui/atoms/code-editor.compo
                 ></app-tag>
               }
               <input
+                id="edit-feed-tags"
                 type="text"
                 #editTagsInput
                 (keydown.enter)="
@@ -230,8 +244,9 @@ import { CodeEditorComponent, CodeTemplate } from '../ui/atoms/code-editor.compo
 
           <!-- Source URL -->
           <div class="flex flex-col gap-1.5">
-            <label class="text-label text-text-primary">Source URL</label>
+            <label for="edit-feed-source-url" class="text-label text-text-primary">Source URL</label>
             <input
+              id="edit-feed-source-url"
               #editUrlInput
               type="text"
               [value]="editingFeed()?.source?.url || ''"
@@ -241,8 +256,9 @@ import { CodeEditorComponent, CodeTemplate } from '../ui/atoms/code-editor.compo
 
           <!-- Advanced Selectors -->
           <div class="flex flex-col gap-1.5">
-            <label class="text-label text-text-primary">Advanced Selectors (JSON)</label>
+            <span id="edit-feed-selectors-label" class="text-label text-text-primary">Advanced Selectors (JSON)</span>
             <app-code-editor
+              aria-labelledby="edit-feed-selectors-label"
               title="HTML Selectors"
               language="json"
               height="180px"
@@ -284,9 +300,11 @@ import { CodeEditorComponent, CodeTemplate } from '../ui/atoms/code-editor.compo
 export class DashboardComponent implements OnInit {
   private feedsService = inject(FeedsService);
   private toast = inject(ToastService);
+  private translate = inject(TranslateService);
 
   feeds = signal<FeedSubscription[]>([]);
   loading = signal(true);
+  error = signal<string | null>(null);
   selectedTag = signal<string | null>(null);
   searchQuery = signal('');
 
@@ -384,11 +402,13 @@ export class DashboardComponent implements OnInit {
 
   async loadFeeds() {
     this.loading.set(true);
+    this.error.set(null);
     try {
       const data = await this.feedsService.getSubscriptions();
       this.feeds.set(data || []);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Falha ao carregar feeds', err);
+      this.error.set(err?.message || this.translate.instant('COMMON.ERROR_LOADING_FEEDS_DESC'));
       this.feeds.set([]);
     } finally {
       this.loading.set(false);

@@ -9,6 +9,7 @@ import { SkeletonComponent } from './skeleton.component';
 import { SubscriptionRowComponent } from './subscription-row.component';
 import { WebhookRowComponent } from './webhook-row.component';
 import { provideRouter } from '@angular/router';
+import { provideTranslateService, TranslateService } from '@ngx-translate/core';
 
 @Component({
   imports: [
@@ -78,8 +79,24 @@ class TestHostComponent {
 describe('molecules', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), provideTranslateService({ lang: 'pt' })],
     }).compileComponents();
+  });
+
+  it('article-card renders its relative time with Intl.RelativeTimeFormat in the current language (pt)', () => {
+    const fixture = TestBed.createComponent(TestHostComponent);
+    const translate = TestBed.inject(TranslateService);
+    translate.use('pt');
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+    fixture.componentInstance.mockArticle = {
+      ...fixture.componentInstance.mockArticle,
+      publishedAt: twoHoursAgo,
+    };
+    fixture.detectChanges();
+
+    const timeEl = fixture.nativeElement.querySelector('app-article-card time');
+    expect(timeEl).toBeTruthy();
+    expect(timeEl.textContent?.trim()).toContain('2 horas');
   });
 
   it('article-card shows emerald accent bar when unread, and changes text style when read', () => {
@@ -154,6 +171,21 @@ describe('molecules', () => {
     expect(refreshBtn).toBeTruthy();
     refreshBtn.click();
     expect(fixture.componentInstance.feedRefreshed).toBe(true);
+  });
+
+  it('subscription-row does not render external Google favicon and falls back to source-mark initial', () => {
+    const fixture = TestBed.createComponent(TestHostComponent);
+    fixture.detectChanges();
+
+    const row = fixture.nativeElement.querySelector('app-subscription-row') as HTMLElement;
+    const img = row.querySelector('app-source-mark img') as HTMLImageElement | null;
+    if (img) {
+      expect(img.src.startsWith(window.location.origin) || img.src.startsWith('/')).toBe(true);
+    } else {
+      expect(img).toBeNull();
+      const initialSpan = row.querySelector('app-source-mark span');
+      expect(initialSpan?.textContent?.trim()).toBe('C');
+    }
   });
 
   it('webhook-row displays target url, active badge, and toggle switch', () => {

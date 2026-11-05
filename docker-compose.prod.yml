@@ -78,6 +78,15 @@ services:
         condition: service_healthy
     networks:
       - feeder_network
+    init: true
+    ipc: host
+    stop_grace_period: 120s
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     restart: unless-stopped
     logging:
       driver: 'json-file'
@@ -94,7 +103,7 @@ services:
       - '80:80'
     depends_on:
       backend:
-        condition: service_started
+        condition: service_healthy
     networks:
       - feeder_network
     restart: unless-stopped

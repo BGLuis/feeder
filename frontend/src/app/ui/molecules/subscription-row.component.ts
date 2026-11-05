@@ -28,7 +28,6 @@ import { SourceMarkComponent } from '../atoms/source-mark.component';
       <div class="flex items-center gap-4 min-w-0 flex-1">
         <app-source-mark
           [name]="title()"
-          [favicon]="faviconUrl()"
           size="lg"
         ></app-source-mark>
 
@@ -71,6 +70,7 @@ import { SourceMarkComponent } from '../atoms/source-mark.component';
           (click)="refresh.emit(feed())"
           class="press p-2 rounded-full text-icon-tertiary hover:text-icon-accent hover:bg-bg-muted transition-colors"
           title="Force sync"
+          aria-label="Force sync"
         >
           <svg lucideRefreshCw class="w-4 h-4"></svg>
         </button>
@@ -79,6 +79,7 @@ import { SourceMarkComponent } from '../atoms/source-mark.component';
           (click)="edit.emit(feed())"
           class="press p-2 rounded-full text-icon-tertiary hover:text-icon-primary hover:bg-bg-muted transition-colors"
           title="Edit feed"
+          aria-label="Edit feed"
         >
           <svg lucidePencil class="w-4 h-4"></svg>
         </button>
@@ -87,6 +88,7 @@ import { SourceMarkComponent } from '../atoms/source-mark.component';
           (click)="delete.emit(feed())"
           class="press p-2 rounded-full text-icon-tertiary hover:text-icon-danger hover:bg-bg-danger-subtle transition-colors"
           title="Delete subscription"
+          aria-label="Delete subscription"
         >
           <svg lucideTrash2 class="w-4 h-4"></svg>
         </button>
@@ -106,17 +108,6 @@ export class SubscriptionRowComponent {
   isHealthy = computed(() => {
     const misses = this.feed().source?.consecutiveMisses;
     return !misses || misses <= 0;
-  });
-
-  faviconUrl = computed(() => {
-    const url = this.feed().source?.url;
-    if (!url) return null;
-    try {
-      const u = new URL(url);
-      return `https://www.google.com/s2/favicons?domain=${u.hostname}&sz=64`;
-    } catch {
-      return null;
-    }
   });
 
   nextFetchTime = computed(() => {

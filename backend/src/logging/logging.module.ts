@@ -6,7 +6,7 @@ import {
 
 import { Module } from '@nestjs/common';
 import { LoggerModule } from 'nestjs-pino';
-import { v7 as uuidv7 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 // Body keys that must never reach the logs.
 const SENSITIVE_BODY_KEYS = new Set([
@@ -84,7 +84,7 @@ const isProduction = process.env.NODE_ENV === 'production';
           return (
             (headers['x-correlation-id'] as string) ||
             (headers['x-request-id'] as string) ||
-            uuidv7()
+            randomUUID()
           );
         },
         transport: isProduction
@@ -106,7 +106,7 @@ const isProduction = process.env.NODE_ENV === 'production';
             url: req.url,
             query: req.query,
             params: req.params,
-            headers: pickHeaders(req.headers as Record<string, unknown>),
+            headers: pickHeaders(req.headers),
             body: redactBody(req.raw?.body || req.body),
             remoteAddress: req.remoteAddress,
             remotePort: req.remotePort,
@@ -132,7 +132,8 @@ const isProduction = process.env.NODE_ENV === 'production';
         },
         timestamp: () => `,"timestamp":"${new Date().toISOString()}"`,
         autoLogging: {
-          ignore: (req: IncomingMessage) => (req.url || '').startsWith('/health'),
+          ignore: (req: IncomingMessage) =>
+            (req.url || '').startsWith('/health'),
         },
       },
     }),

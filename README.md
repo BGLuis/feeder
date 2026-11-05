@@ -53,12 +53,17 @@ Este projeto nasceu como uma maneira de acompanhar melhor as minhas próprias no
 
 #### Método 1: Via Docker Compose (Recomendado)
 
-Com o Docker instalado, você pode subir toda a infraestrutura (MySQL, Redis, Backend e Frontend) com um único comando:
+Com o Docker instalado, você pode subir o ambiente de desenvolvimento (MySQL, Redis, Backend com watch e Frontend com reload) com:
 
 ```sh
-docker-compose up -d
+docker compose up -d
 ```
-Acesse a aplicação em `http://localhost:4200` e a API em `http://localhost:3000`.
+Acesse a aplicação em `http://localhost:4200`, a API em `http://localhost:3000`, a documentação Swagger em `http://localhost:3000/api/docs` e o health check em `http://localhost:3000/health`.
+
+Para rodar o ambiente de produção otimizado:
+```sh
+docker compose -f docker-compose.prod.yml up -d
+```
 
 #### Método 2: Execução Manual / Nativa
 
@@ -84,7 +89,7 @@ As seguintes variáveis de ambiente são utilizadas neste projeto. Configure-as 
 
 | Variável | Descrição | Valor Padrão (Exemplo) |
 |---|---|---|
-| `NODE_ENV` | Ambiente de execução do Node | `development` |
+| `NODE_ENV` | Ambiente de execução do Node (`development`, `production`, `test`) | `development` |
 | `PORT` | Porta do backend | `3000` |
 | `DB_HOST` | Host do MySQL (use `mysql` via Docker, ou `localhost` localmente) | `localhost` |
 | `DB_PORT` | Porta do banco de dados MySQL | `3306` |
@@ -94,11 +99,16 @@ As seguintes variáveis de ambiente são utilizadas neste projeto. Configure-as 
 | `DB_PASSWORD` | Senha do banco de dados | `feederpassword` |
 | `REDIS_HOST` | Host do Redis (use `redis` via Docker, ou `localhost` localmente) | `localhost` |
 | `REDIS_PORT` | Porta do Redis | `6379` |
-| `JWT_SECRET` | Chave secreta para assinatura de JWT | `sua_chave_secreta_super_segura` |
+| `REDIS_PASSWORD` | Senha do Redis (opcional) | `""` |
+| `JWT_SECRET` | Chave secreta para assinatura de JWT (mínimo 32 caracteres) | `sua_chave_secreta_super_segura_min_32` |
 | `JWT_EXPIRATION` | Tempo de expiração do token JWT | `1d` |
+| `ENCRYPTION_KEY` | Chave AES-256-GCM de 32 bytes em hex (64 caracteres) para dados em repouso | `0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef` |
 | `RP_NAME` | Nome do provedor WebAuthn (Passkeys) | `Feeder App` |
 | `RP_ID` | ID do provedor WebAuthn | `localhost` |
-| `ORIGIN` | Origem permitida para o Frontend | `http://localhost:4200` |
+| `ORIGIN` | Origem permitida para o Frontend (WebAuthn) | `http://localhost:4200` |
+| `ALLOWED_ORIGINS` | Lista CSV de origens permitidas via CORS | `http://localhost:4200` |
+| `SSRF_ALLOWED_HOSTS` | Lista CSV de hostnames que ignoram o guard SSRF | `""` |
+| `ENABLE_SWAGGER` | Habilita a documentação OpenAPI/Swagger em `/api/docs` | `true` |
 | `PHPMYADMIN_PORT` | Porta exposta do PhpMyAdmin (docker-compose.tools.yml) | `8080` |
 | `REDISCOMMANDER_PORT`| Porta exposta do Redis Commander (docker-compose.tools.yml)| `8081` |
 

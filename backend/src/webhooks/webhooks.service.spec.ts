@@ -10,7 +10,7 @@ describe('WebhooksService', () => {
   const repo = {
     save: jest.fn((w: Webhook) => {
       saved = w;
-      return Promise.resolve({ id: 'w1', ...w });
+      return Promise.resolve({ ...w, id: 'w1' });
     }),
     find: jest.fn(),
     findOne: jest.fn(),

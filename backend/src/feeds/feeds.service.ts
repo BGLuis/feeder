@@ -71,7 +71,8 @@ export class FeedsService {
       if (
         err?.code === 'ER_DUP_ENTRY' ||
         err?.errno === 1062 ||
-        (err?.name === 'QueryFailedError' && String(err).includes('Duplicate entry'))
+        (err?.name === 'QueryFailedError' &&
+          String(err).includes('Duplicate entry'))
       ) {
         throw new ConflictException('Already subscribed to this source');
       }

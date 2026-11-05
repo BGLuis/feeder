@@ -6,4 +6,7 @@ process.env.JWT_SECRET =
 // exactly 64 hex chars
 process.env.ENCRYPTION_KEY =
   process.env.ENCRYPTION_KEY ?? 'abcdef0123456789'.repeat(4);
+process.env.DB_USER = process.env.DB_USER ?? 'root';
+process.env.DB_PASSWORD = process.env.DB_PASSWORD ?? 'rootpassword';
+process.env.DB_NAME = process.env.DB_NAME ?? 'feeder_test';
 process.env.SSRF_ALLOWED_HOSTS = process.env.SSRF_ALLOWED_HOSTS ?? '';
