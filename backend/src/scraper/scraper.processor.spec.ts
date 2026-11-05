@@ -388,10 +388,7 @@ describe('ScraperProcessor', () => {
         jest
           .spyOn(processor as any, 'run')
           .mockImplementation(async (j, s, signal, savedArticles: any) => {
-            articleRepo.save.mockImplementationOnce(async () => {
-              savedArticles?.push(item1 as any);
-              return item1;
-            });
+            articleRepo.save.mockImplementationOnce(async () => item1);
             articleRepo.save.mockImplementationOnce(
               () => new Promise(() => {}),
             );

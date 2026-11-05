@@ -32,8 +32,10 @@ export class FeedsScheduler {
         now,
       })
       .distinct(true)
-      .orderBy('CASE WHEN source.nextFetchAt IS NULL THEN 0 ELSE 1 END', 'ASC')
-      .addOrderBy('source.nextFetchAt', 'ASC')
+      // MySQL sorts NULL first in ASC order. A CASE expression is not an
+      // option here: with a join plus take(), TypeORM parses each orderBy key
+      // as `alias.column` and throws on anything else.
+      .orderBy('source.nextFetchAt', 'ASC')
       .take(this.batchSize)
       .getMany();
 
