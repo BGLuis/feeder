@@ -5,7 +5,7 @@ import { API_BASE_URL } from '../api.token';
 export interface Webhook {
 	id: string;
 	url: string;
-	secret: string;
+	// The signing secret is write-only: sent on create/update, never returned.
 	isActive: boolean;
 	triggerType: 'ALL' | 'TAG' | 'SOURCE';
 	triggerValue: string | null;

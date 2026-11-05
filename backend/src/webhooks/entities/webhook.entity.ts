@@ -21,7 +21,9 @@ export class Webhook {
   @Column({ length: 2048 })
   url: string;
 
-  @Column({ nullable: true })
+  // Stored encrypted at rest (secret-box, v1.* wire format); decrypted only at
+  // dispatch time to sign the HMAC. text, not varchar(255): ciphertext is longer.
+  @Column('text', { nullable: true })
   secret: string;
 
   @Column({ default: true })

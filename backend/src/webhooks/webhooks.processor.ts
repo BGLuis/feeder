@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { Job } from 'bullmq';
 import * as crypto from 'crypto';
 import { safeFetch, SsrfBlockedError } from '../common/net/ssrf-guard';
+import { decryptSecret } from '../common/crypto/secret-box';
 
 const REQUEST_TIMEOUT_MS = 10_000;
 const MAX_RESPONSE_BYTES = 64 * 1024;
@@ -29,10 +30,14 @@ export class WebhooksProcessor extends WorkerHost {
       throw new Error(`Webhook job ${job.id} has no signing secret`);
     }
 
+    // Secrets are stored and queued encrypted; recover the real key only here,
+    // in memory, to sign. decryptSecret passes plaintext through for pre-encryption rows.
+    const signingSecret = decryptSecret(secret);
+
     const payloadString = JSON.stringify(payload);
     const timestamp = Math.floor(Date.now() / 1000).toString();
     const signature = crypto
-      .createHmac('sha256', secret)
+      .createHmac('sha256', signingSecret)
       .update(`${timestamp}.${payloadString}`)
       .digest('hex');
 
