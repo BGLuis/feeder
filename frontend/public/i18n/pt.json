@@ -20,7 +20,14 @@
     "REFRESH": "Atualizar",
     "SYNC_NOW": "Sincronizar agora",
     "HEALTHY": "Saudável",
-    "ERROR": "Erro"
+    "ERROR": "Erro",
+    "RETRY": "Tentar novamente",
+    "ERROR_LOADING_FEEDS": "Erro ao carregar feeds",
+    "ERROR_LOADING_FEEDS_DESC": "Não foi possível carregar os feeds. Verifique sua conexão e tente novamente.",
+    "ERROR_LOADING_ARTICLES": "Erro ao carregar artigos",
+    "ERROR_LOADING_ARTICLES_DESC": "Não foi possível carregar os artigos. Verifique sua conexão e tente novamente.",
+    "ERROR_LOADING_WEBHOOKS": "Erro ao carregar webhooks",
+    "ERROR_LOADING_WEBHOOKS_DESC": "Não foi possível carregar os webhooks. Verifique sua conexão e tente novamente."
   },
   "SETTINGS": {
     "PREFERENCES_TITLE": "Preferências do Aplicativo",
@@ -35,5 +42,21 @@
     "DARK": "Escuro",
     "LIGHT": "Claro",
     "FINISH": "Concluir Configuração"
+  },
+  "ARTICLE": {
+    "SAVE": "Salvar artigo",
+    "REMOVE_SAVED": "Remover dos salvos",
+    "MARK_READ": "Marcar como lido",
+    "MARK_UNREAD": "Marcar como não lido",
+    "OPEN_EXTERNAL": "Abrir link externo"
+  },
+  "AUTH": {
+    "SIGN_IN": "Entrar",
+    "SIGN_UP": "Cadastrar-se"
+  },
+  "FEED": {
+    "FORCE_SYNC": "Forçar sincronização",
+    "EDIT_FEED": "Editar feed",
+    "DELETE_SUBSCRIPTION": "Excluir inscrição"
   }
 }

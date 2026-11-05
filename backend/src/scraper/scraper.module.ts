@@ -1,7 +1,5 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
-import { ScraperController } from './scraper.controller';
-import { ScraperService } from './scraper.service';
 import { ScraperProcessor } from './scraper.processor';
 
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -20,7 +18,7 @@ import { Webhook } from '../webhooks/entities/webhook.entity';
       name: 'webhooks',
     }),
   ],
-  controllers: [ScraperController],
-  providers: [ScraperService, ScraperProcessor],
+  controllers: [],
+  providers: [ScraperProcessor],
 })
 export class ScraperModule {}

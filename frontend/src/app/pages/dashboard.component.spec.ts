@@ -17,6 +17,7 @@ describe('DashboardComponent', () => {
       getItem: () => null,
       setItem: () => undefined,
       removeItem: () => undefined,
+      clear: () => undefined,
     });
     feedsServiceSpy = {
       getSubscriptions: () => Promise.resolve([{ id: '1', customName: 'Angular Blog', source: { id: 's1', name: 'Angular Blog', url: 'https://blog.angular.dev' } }])
@@ -49,7 +50,7 @@ describe('DashboardComponent', () => {
   });
 
   it('should handle error when loading feeds', async () => {
-    feedsServiceSpy.getSubscriptions = () => Promise.reject('network error');
+    feedsServiceSpy.getSubscriptions = vi.fn().mockRejectedValue(new Error('network error'));
     
     fixture.detectChanges();
     await fixture.whenStable();
@@ -57,8 +58,37 @@ describe('DashboardComponent', () => {
 
     expect(component.feeds().length).toBe(0);
     expect(component.loading()).toBe(false);
+    expect(component.error()).toBe('network error');
     
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.textContent).toContain('No feeds yet');
+    expect(compiled.querySelector('app-alert')).toBeTruthy();
+    expect(compiled.textContent).toContain('network error');
+    expect(compiled.querySelector('app-empty-state')).toBeFalsy();
+    expect(compiled.textContent).not.toContain('No feeds yet');
+  });
+
+  it('should call getSubscriptions again when clicking retry', async () => {
+    feedsServiceSpy.getSubscriptions = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('network error'))
+      .mockResolvedValueOnce([
+        { id: '1', customName: 'Angular Blog', source: { id: 's1', name: 'Angular Blog', url: 'https://blog.angular.dev' } },
+      ]);
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const retryBtn = compiled.querySelector('app-alert button') as HTMLElement;
+    expect(retryBtn).toBeTruthy();
+    retryBtn.click();
+
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(feedsServiceSpy.getSubscriptions).toHaveBeenCalledTimes(2);
+    expect(component.feeds().length).toBe(1);
+    expect(component.error()).toBeNull();
   });
 });

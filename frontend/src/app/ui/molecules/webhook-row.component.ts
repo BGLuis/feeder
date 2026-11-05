@@ -56,6 +56,7 @@ import { ToggleComponent } from '../atoms/toggle.component';
           (click)="delete.emit(webhook().id)"
           class="p-2 rounded-full text-icon-tertiary hover:text-icon-danger hover:bg-bg-danger-subtle transition-colors"
           title="Delete webhook"
+          aria-label="Delete webhook"
         >
           <svg lucideTrash2 class="w-4 h-4"></svg>
         </button>

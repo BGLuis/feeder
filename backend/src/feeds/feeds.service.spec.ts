@@ -286,4 +286,35 @@ describe('FeedsService', () => {
       );
     });
   });
+
+  describe('refreshSubscription', () => {
+    it('throws when subscription is not found', async () => {
+      subscriptionRepository.findOne.mockResolvedValueOnce(null);
+
+      await expect(
+        service.refreshSubscription('user-1', 'sub-missing'),
+      ).rejects.toThrow('Subscription not found');
+    });
+
+    it('enqueues fetch when subscription is found and returns success', async () => {
+      const sub = {
+        id: 'sub-1',
+        authStorageState: 'enc-state',
+        source: { id: 'src-1', url: 'https://example.com/feed.xml' },
+      };
+      subscriptionRepository.findOne.mockResolvedValueOnce(sub);
+
+      const result = await service.refreshSubscription('user-1', 'sub-1');
+
+      expect(result).toEqual({ success: true });
+      expect(scraperQueue.add).toHaveBeenCalledWith(
+        'fetch',
+        expect.objectContaining({
+          sourceId: 'src-1',
+          url: 'https://example.com/feed.xml',
+          authStorageState: 'enc-state',
+        }),
+      );
+    });
+  });
 });

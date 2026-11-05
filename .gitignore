@@ -1,5 +1,5 @@
 # Node.js
-node_modules/
+node_modules
 dist/
 build/
 
@@ -63,3 +63,6 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # AI Test Scripts
 .ai-scripts/
+
+# Worktrees
+.worktrees/
