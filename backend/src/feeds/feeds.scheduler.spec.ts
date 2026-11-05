@@ -16,7 +16,6 @@ describe('FeedsScheduler', () => {
       where: jest.fn().mockReturnThis(),
       distinct: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
-      addOrderBy: jest.fn().mockReturnThis(),
       take: jest.fn().mockReturnThis(),
       getMany: jest.fn().mockResolvedValue([]),
     };
@@ -57,11 +56,7 @@ describe('FeedsScheduler', () => {
       'source.subscriptions',
       'subscription',
     );
-    expect(qb.orderBy).toHaveBeenCalledWith(
-      'CASE WHEN source.nextFetchAt IS NULL THEN 0 ELSE 1 END',
-      'ASC',
-    );
-    expect(qb.addOrderBy).toHaveBeenCalledWith('source.nextFetchAt', 'ASC');
+    expect(qb.orderBy).toHaveBeenCalledWith('source.nextFetchAt', 'ASC');
     expect(scraperQueue.add).toHaveBeenCalledTimes(1);
     expect(scraperQueue.add).toHaveBeenCalledWith(
       'fetch',
